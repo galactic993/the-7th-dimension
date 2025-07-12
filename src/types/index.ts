@@ -18,6 +18,8 @@ export interface Post {
   location?: string;
   isLiked: boolean;
   isSaved: boolean;
+  source?: 'mock' | 'instagram';
+  permalink?: string;
 }
 
 export interface Comment {

@@ -4,12 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run dev:stop; nohup concurrently \"npx convex dev\" \"vite dev\" --names \"convex,vite\" --prefix name > dev.log 2>&1 & echo \"Development servers started. Check dev.log for output.\"",
+    "dev:stop": "pkill -f \"convex dev\" && pkill -f \"vite dev\" && rm dev.log && echo \"Development servers stopped.\"",
+    "dev:logs": "cat dev.log",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "convex": "^1.25.2",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -20,6 +23,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.18",
+    "concurrently": "^9.2.0",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",

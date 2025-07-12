@@ -4,13 +4,23 @@ import PostGrid from './components/PostGrid';
 import PostModal from './components/PostModal';
 import { mockPosts } from './data/mockData';
 import { Post } from './types';
-import { Shuffle } from 'lucide-react';
+import { Shuffle, RefreshCw, AlertCircle } from 'lucide-react';
+import { useInstagramPosts } from './hooks/useInstagramPosts';
 
 function App() {
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
+  
+  const hashtagName = import.meta.env.VITE_INSTAGRAM_SEARCH_HASHTAG_NAME || 'the7thdimension';
+  const { 
+    instagramPosts, 
+    loading: instagramLoading, 
+    error: instagramError, 
+    refetch: refetchInstagram, 
+    isApiAvailable 
+  } = useInstagramPosts(hashtagName, 5);
 
   // Fisher-Yates shuffle algorithm
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -21,8 +31,12 @@ function App() {
     }
     return shuffled;
   };
+  const allPosts = useMemo(() => {
+    return [...posts, ...instagramPosts];
+  }, [posts, instagramPosts]);
+
   const filteredPosts = useMemo(() => {
-    let filtered = posts;
+    let filtered = allPosts;
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -41,7 +55,7 @@ function App() {
       filtered = shuffleArray(filtered);
     }
     return filtered;
-  }, [posts, searchQuery, isRandomized]);
+  }, [allPosts, searchQuery, isRandomized]);
 
   const handleRandomShuffle = () => {
     setIsRandomized(!isRandomized);
@@ -95,9 +109,51 @@ function App() {
             </h2>
             <div className="text-sm text-gray-600">
               {filteredPosts.length}件の投稿
+              {instagramLoading && (
+                <span className="ml-2 text-blue-600">
+                  <RefreshCw className="w-4 h-4 inline animate-spin" /> Instagram読み込み中...
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex justify-end mb-4">
+          
+          {instagramError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-red-800">Instagram API Error</h3>
+                  <p className="text-sm text-red-700 mt-1">{instagramError}</p>
+                  <button
+                    onClick={refetchInstagram}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                  >
+                    再試行
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {isApiAvailable && instagramPosts.length > 0 && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                <span className="text-sm text-green-700">
+                  Instagram APIから{instagramPosts.length}件の投稿を取得しました
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 mb-4">
+            <button
+              onClick={refetchInstagram}
+              disabled={instagramLoading}
+              className="flex items-center space-x-1.5 px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 transition-all duration-200 text-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${instagramLoading ? 'animate-spin' : ''}`} />
+              <span className="font-medium text-sm">Instagram再取得</span>
+            </button>
             <button
               onClick={handleRandomShuffle}
               className={`flex items-center space-x-1.5 px-4 py-2 rounded-full transition-all duration-200 text-sm ${

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart, MessageCircle, Bookmark } from 'lucide-react';
 import { Post } from '../types';
+import InstagramEmbed from './InstagramEmbed';
 
 interface PostCardProps {
   post: Post;
@@ -20,6 +21,19 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onSave, onClick }) =>
     onSave(post.id);
   };
 
+  // Instagram posts use official embed
+  if (post.source === 'instagram' && post.permalink) {
+    return (
+      <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
+        <InstagramEmbed 
+          permalink={post.permalink}
+          className="w-full h-auto"
+        />
+      </div>
+    );
+  }
+
+  // Mock posts use custom UI
   return (
     <div 
       className="relative aspect-square bg-white rounded-lg overflow-hidden cursor-pointer group shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
