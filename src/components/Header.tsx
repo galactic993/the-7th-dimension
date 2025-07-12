@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, LogOut } from 'lucide-react';
+import { useClerk } from '@clerk/clerk-react';
 
 interface HeaderProps {
   searchQuery: string;
@@ -10,6 +11,7 @@ const Header: React.FC<HeaderProps> = ({
   searchQuery, 
   onSearchChange
 }) => {
+  const { signOut } = useClerk();
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -35,7 +37,13 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          <div></div>
+          <button
+            onClick={() => signOut()}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm font-medium">ログアウト</span>
+          </button>
         </div>
       </div>
     </header>

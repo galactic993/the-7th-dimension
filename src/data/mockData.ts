@@ -56,7 +56,8 @@ export const mockPosts: Post[] = [
     tags: ['ヒーリング', 'スピリチュアル', '愛と光'],
     location: 'オンライン',
     isLiked: false,
-    isSaved: false
+    isSaved: false,
+    source: 'mock' as const
   },
   {
     id: '2',
@@ -105,7 +106,8 @@ export const mockPosts: Post[] = [
     tags: ['瞑想', 'チャクラ', '覚醒'],
     location: 'オンライン',
     isLiked: false,
-    isSaved: false
+    isSaved: false,
+    source: 'mock' as const
   },
   {
     id: '4',

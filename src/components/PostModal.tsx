@@ -158,11 +158,11 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
               </div>
 
               {/* Comment Input */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 pt-3 border-t border-gray-100">
                 <input
                   type="text"
                   placeholder="コメントを追加..."
-                  className="flex-1 border-none outline-none text-sm"
+                  className="flex-1 border-none outline-none text-sm py-2"
                 />
                 <button className="text-blue-500 font-semibold text-sm hover:text-blue-600 transition-colors">
                   投稿

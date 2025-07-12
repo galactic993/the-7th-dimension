@@ -12,6 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.33.0",
+    "@clerk/localizations": "^3.18.0",
+    "@clerk/themes": "^2.2.55",
+    "@convex-dev/auth": "^0.0.87",
     "convex": "^1.25.2",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
