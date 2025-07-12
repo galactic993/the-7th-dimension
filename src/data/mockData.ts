@@ -78,7 +78,8 @@ export const mockPosts: Post[] = [
     tags: ['遠隔ヒーリング', '癒し', '感謝'],
     location: 'オンライン',
     isLiked: true,
-    isSaved: true
+    isSaved: true,
+    source: 'mock' as const
   },
   {
     id: '3',
@@ -128,7 +129,8 @@ export const mockPosts: Post[] = [
     tags: ['奇跡', '変容', '魂の癒し'],
     location: 'オンライン',
     isLiked: true,
-    isSaved: false
+    isSaved: false,
+    source: 'mock' as const
   },
   {
     id: '5',
@@ -141,7 +143,8 @@ export const mockPosts: Post[] = [
     tags: ['無条件の愛', '宇宙意識', '愛の分かち合い'],
     location: 'オンライン',
     isLiked: false,
-    isSaved: true
+    isSaved: true,
+    source: 'mock' as const
   },
   {
     id: '6',
@@ -160,7 +163,9 @@ export const mockPosts: Post[] = [
     ],
     timestamp: '1d',
     tags: ['内なる革命', 'ハートチャクラ', '新しい人生'],
+    location: 'オンライン',
     isLiked: false,
-    isSaved: false
+    isSaved: false,
+    source: 'mock' as const
   }
 ];

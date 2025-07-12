@@ -3,6 +3,7 @@ import { useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Post } from '../types';
 import { mapInstagramMediaArrayToPosts } from '../services/instagramDataMapper';
+import { getInstagramConfig, isInstagramConfigAvailable } from '../config/instagram';
 
 interface UseInstagramPostsResult {
   instagramPosts: Post[];
@@ -20,37 +21,37 @@ export const useInstagramPosts = (hashtagName?: string, limit: number = 5): UseI
 
   const getInstagramPosts = useAction(api.instagram.getRecentPostsByHashtagName);
 
-  const accessToken = import.meta.env.VITE_INSTAGRAM_GRAPH_API_ACCESS_TOKEN;
-  const accountId = import.meta.env.VITE_INSTAGRAM_ACCOUNT_ID;
-  const apiVersion = import.meta.env.VITE_INSTAGRAM_API_VERSION || 'v15.0';
-
   useEffect(() => {
-    setIsApiAvailable(!!(accessToken && accountId));
-  }, [accessToken, accountId]);
+    setIsApiAvailable(isInstagramConfigAvailable());
+  }, []);
 
   const fetchInstagramPosts = useCallback(async () => {
-    if (!accessToken || !accountId || !hashtagName) {
-      setError('Instagram API not configured or no hashtag specified');
+    if (!hashtagName) {
+      setError('No hashtag specified');
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
+      const config = getInstagramConfig();
+      
+      setLoading(true);
+      setError(null);
+
       const media = await getInstagramPosts({
         hashtagName,
-        accessToken,
-        accountId,
+        accessToken: config.accessToken,
+        accountId: config.accountId,
         limit,
-        apiVersion
+        apiVersion: config.apiVersion
       });
       const posts = mapInstagramMediaArrayToPosts(media);
       setInstagramPosts(posts);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       
-      if (errorMessage.includes('Authentication failed') || errorMessage.includes('401')) {
+      if (errorMessage.includes('Instagram API configuration is incomplete')) {
+        setError('Instagram API not configured. Please check your environment variables.');
+      } else if (errorMessage.includes('Authentication failed') || errorMessage.includes('401')) {
         setError('Authentication failed. Please check your access token.');
       } else if (errorMessage.includes('Access denied') || errorMessage.includes('403')) {
         setError('Access denied. Please check your permissions and account settings.');

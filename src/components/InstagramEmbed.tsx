@@ -5,36 +5,88 @@ interface InstagramEmbedProps {
   className?: string;
 }
 
+// Global script state management
+let instagramScriptLoaded = false;
+let instagramScriptPromise: Promise<void> | null = null;
+
+const loadInstagramScript = (): Promise<void> => {
+  if (instagramScriptLoaded) {
+    return Promise.resolve();
+  }
+  
+  if (instagramScriptPromise) {
+    return instagramScriptPromise;
+  }
+  
+  instagramScriptPromise = new Promise((resolve, reject) => {
+    // Check if script already exists
+    const existingScript = document.querySelector('script[src*="instagram.com/embed.js"]');
+    if (existingScript) {
+      instagramScriptLoaded = true;
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://www.instagram.com/embed.js';
+    script.async = true;
+    
+    script.onload = () => {
+      instagramScriptLoaded = true;
+      resolve();
+    };
+    
+    script.onerror = () => {
+      instagramScriptPromise = null;
+      reject(new Error('Failed to load Instagram embed script'));
+    };
+    
+    document.body.appendChild(script);
+  });
+  
+  return instagramScriptPromise;
+};
+
 const InstagramEmbed: React.FC<InstagramEmbedProps> = ({ permalink, className = '' }) => {
   const embedRef = useRef<HTMLDivElement>(null);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    // Instagram embed script
-    const script = document.createElement('script');
-    script.src = '//www.instagram.com/embed.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    // Process embeds after script loads
-    script.onload = () => {
-      if (window.instgrm) {
-        window.instgrm.Embeds.process();
-      }
-    };
-
+    mounted.current = true;
     return () => {
-      // Cleanup script on unmount
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      mounted.current = false;
     };
   }, []);
 
   useEffect(() => {
+    const processEmbeds = async () => {
+      try {
+        await loadInstagramScript();
+        if (mounted.current && window.instgrm) {
+          window.instgrm.Embeds.process();
+        }
+      } catch (error) {
+        console.error('Failed to load Instagram embed:', error);
+      }
+    };
+    
+    processEmbeds();
+  }, []);
+
+  useEffect(() => {
     // Re-process embeds when permalink changes
-    if (window.instgrm) {
-      window.instgrm.Embeds.process();
-    }
+    const reprocessEmbeds = async () => {
+      try {
+        await loadInstagramScript();
+        if (mounted.current && window.instgrm) {
+          window.instgrm.Embeds.process();
+        }
+      } catch (error) {
+        console.error('Failed to reprocess Instagram embed:', error);
+      }
+    };
+    
+    reprocessEmbeds();
   }, [permalink]);
 
   return (
