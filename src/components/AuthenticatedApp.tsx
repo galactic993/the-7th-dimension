@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import Header from './Header';
 import PostGrid from './PostGrid';
 import PostModal from './PostModal';
+import CreatePost from './CreatePost';
 import { mockPosts } from '../data/mockData';
 import { Post } from '../types';
-import { Shuffle, RefreshCw, AlertCircle } from 'lucide-react';
+import { Shuffle, RefreshCw, AlertCircle, Plus } from 'lucide-react';
 import { useInstagramPosts } from '../hooks/useInstagramPosts';
 
 function AuthenticatedApp() {
@@ -12,6 +13,7 @@ function AuthenticatedApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const hashtagName = import.meta.env.VITE_INSTAGRAM_SEARCH_HASHTAG_NAME || 'the7thdimension';
   const { 
@@ -92,6 +94,19 @@ function AuthenticatedApp() {
     setSelectedPost(null);
   };
 
+  const handleCreatePost = () => {
+    setIsCreatePostOpen(true);
+  };
+
+  const handleCloseCreatePost = () => {
+    setIsCreatePostOpen(false);
+  };
+
+  const handlePostCreated = () => {
+    // Refresh the page or refetch posts after creating a new post
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <Header 
@@ -105,13 +120,22 @@ function AuthenticatedApp() {
             <h2 className="text-2xl font-bold text-gray-900">
               あなたはどんなことを感じましたか？🌟
             </h2>
-            <div className="text-sm text-gray-600">
-              {filteredPosts.length}件の投稿
-              {instagramLoading && (
-                <span className="ml-2 text-blue-600">
-                  <RefreshCw className="w-4 h-4 inline animate-spin" /> Instagram読み込み中...
-                </span>
-              )}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleCreatePost}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="font-medium">投稿を作成</span>
+              </button>
+              <div className="text-sm text-gray-600">
+                {filteredPosts.length}件の投稿
+                {instagramLoading && (
+                  <span className="ml-2 text-blue-600">
+                    <RefreshCw className="w-4 h-4 inline animate-spin" /> Instagram読み込み中...
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           
@@ -185,6 +209,12 @@ function AuthenticatedApp() {
           onSave={handleSave}
         />
       )}
+
+      <CreatePost
+        isOpen={isCreatePostOpen}
+        onClose={handleCloseCreatePost}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 }
