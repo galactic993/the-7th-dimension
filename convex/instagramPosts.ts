@@ -11,6 +11,12 @@ interface InstagramMedia {
   timestamp: string;
   like_count?: number;
   comments_count?: number;
+  username?: string;
+  owner?: {
+    username: string;
+    profile_picture_url: string;
+    id: string;
+  };
 }
 
 interface InstagramHashtagResponse {
@@ -142,6 +148,12 @@ export const storeFetchedPosts = internalMutation({
       timestamp: v.string(),
       like_count: v.optional(v.number()),
       comments_count: v.optional(v.number()),
+      username: v.optional(v.string()),
+      owner: v.optional(v.object({
+        username: v.string(),
+        profile_picture_url: v.string(),
+        id: v.string(),
+      })),
     })),
     hashtag: v.string()
   },
@@ -151,6 +163,7 @@ export const storeFetchedPosts = internalMutation({
     let updatedPosts = 0;
 
     for (const post of args.posts) {
+      // Store in instagramPosts table for tracking
       const existing = await ctx.db
         .query("instagramPosts")
         .withIndex("by_instagram_id", (q) => q.eq("instagramId", post.id))
@@ -178,6 +191,69 @@ export const storeFetchedPosts = internalMutation({
           lastChecked: now
         });
         newPosts++;
+      }
+
+      // Also store in posts table for UI display
+      // Check for duplicates using instagramId first, then permalink as fallback
+      let existingPost = await ctx.db
+        .query("posts")
+        .withIndex("by_source_instagram_id", (q) => 
+          q.eq("source", "instagram").eq("instagramId", post.id)
+        )
+        .first();
+
+      // If not found by instagramId, check by permalink as fallback
+      if (!existingPost && post.permalink) {
+        existingPost = await ctx.db
+          .query("posts")
+          .withIndex("by_source_permalink", (q) => 
+            q.eq("source", "instagram").eq("permalink", post.permalink)
+          )
+          .first();
+      }
+
+      if (!existingPost && post.id) {
+        const isVideo = post.media_type === 'VIDEO';
+        const userId = post.owner?.id || `instagram_${post.id}`;
+        const username = post.owner?.username || post.username || 'instagram_user';
+        const displayName = post.owner?.username || post.username || 'Instagram User';
+        const avatar = post.owner?.profile_picture_url || '/images/default-avatar.png';
+        
+        try {
+          await ctx.db.insert("posts", {
+            userId: userId,
+            username: username,
+            displayName: displayName,
+            avatar: avatar,
+            imageUrls: isVideo ? [] : [post.media_url],
+            videoUrl: isVideo ? post.media_url : undefined,
+            caption: post.caption || '',
+            tags: extractHashtagsFromCaption(post.caption || ''),
+            location: 'Instagram',
+            likes: post.like_count || 0,
+            isVerified: false,
+            source: "instagram",
+            timestamp: post.timestamp,
+            permalink: post.permalink,
+            instagramId: post.id,
+          });
+        } catch (error) {
+          // Handle potential race condition duplicates gracefully
+          console.log(`Skipping duplicate post with instagramId: ${post.id}`);
+        }
+      } else if (existingPost) {
+        // Update existing post's like count and instagramId if needed
+        const updates: any = {};
+        if (existingPost.likes !== (post.like_count || 0)) {
+          updates.likes = post.like_count || 0;
+        }
+        if (!existingPost.instagramId && post.id) {
+          updates.instagramId = post.id;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await ctx.db.patch(existingPost._id, updates);
+        }
       }
     }
 
@@ -398,4 +474,81 @@ async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: s
 
   console.log(`Found ${data.data?.length || 0} posts for hashtag ID: ${hashtagId}`);
   return data.data || [];
-} 
+}
+
+// Helper function to extract hashtags from caption
+function extractHashtagsFromCaption(caption: string): string[] {
+  const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
+  const matches = caption.match(hashtagRegex);
+  return matches ? matches.map(tag => tag.substring(1)) : [];
+}
+
+export const removeDuplicatePosts = internalMutation({
+  args: {
+    source: v.optional(v.string())
+  },
+  handler: async (ctx, args) => {
+    const source = args.source || "instagram";
+    
+    // Find all posts for the source
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_source", (q) => q.eq("source", source))
+      .collect();
+    
+    // Group by instagramId first, then by permalink for posts without instagramId
+    const instagramIdGroups = new Map<string, typeof posts>();
+    const permalinkGroups = new Map<string, typeof posts>();
+    
+    for (const post of posts) {
+      if (post.instagramId) {
+        if (!instagramIdGroups.has(post.instagramId)) {
+          instagramIdGroups.set(post.instagramId, []);
+        }
+        instagramIdGroups.get(post.instagramId)!.push(post);
+      } else if (post.permalink) {
+        if (!permalinkGroups.has(post.permalink)) {
+          permalinkGroups.set(post.permalink, []);
+        }
+        permalinkGroups.get(post.permalink)!.push(post);
+      }
+    }
+    
+    let removedCount = 0;
+    
+    // Remove duplicates by instagramId
+    for (const [instagramId, duplicates] of instagramIdGroups) {
+      if (duplicates.length > 1) {
+        // Sort by creation time, keep the first one
+        duplicates.sort((a, b) => a._creationTime - b._creationTime);
+        
+        // Remove all but the first
+        for (let i = 1; i < duplicates.length; i++) {
+          await ctx.db.delete(duplicates[i]._id);
+          removedCount++;
+        }
+        
+        console.log(`Removed ${duplicates.length - 1} duplicates for instagramId: ${instagramId}`);
+      }
+    }
+    
+    // Remove duplicates by permalink (for posts without instagramId)
+    for (const [permalink, duplicates] of permalinkGroups) {
+      if (duplicates.length > 1) {
+        // Sort by creation time, keep the first one
+        duplicates.sort((a, b) => a._creationTime - b._creationTime);
+        
+        // Remove all but the first
+        for (let i = 1; i < duplicates.length; i++) {
+          await ctx.db.delete(duplicates[i]._id);
+          removedCount++;
+        }
+        
+        console.log(`Removed ${duplicates.length - 1} duplicates for permalink: ${permalink}`);
+      }
+    }
+    
+    console.log(`Total duplicates removed: ${removedCount}`);
+    return removedCount;
+  }
+}); 

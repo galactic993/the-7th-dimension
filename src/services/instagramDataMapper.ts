@@ -9,14 +9,24 @@ interface InstagramMedia {
   timestamp: string;
   like_count?: number;
   comments_count?: number;
+  username?: string;
+  owner?: {
+    username: string;
+    profile_picture_url: string;
+    id: string;
+  };
 }
 
 const createUserFromInstagramPost = (media: InstagramMedia): User => {
+  const username = media.username || media.owner?.username || 'instagram_user';
+  const avatar = media.owner?.profile_picture_url || '/images/default-avatar.png';
+  const userId = media.owner?.id || media.id;
+  
   return {
-    id: `instagram_${media.id}`,
-    username: 'instagram_user',
-    displayName: 'Instagram User',
-    avatar: '/images/default-avatar.png',
+    id: `instagram_${userId}`,
+    username: username,
+    displayName: username,
+    avatar: avatar,
     isVerified: false
   };
 };

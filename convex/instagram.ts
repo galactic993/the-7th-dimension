@@ -10,6 +10,12 @@ interface InstagramMedia {
   timestamp: string;
   like_count?: number;
   comments_count?: number;
+  username?: string;
+  owner?: {
+    username: string;
+    profile_picture_url: string;
+    id: string;
+  };
 }
 
 interface InstagramHashtagResponse {
@@ -92,7 +98,9 @@ export const getRecentMediaByHashtag = action({
       'permalink',
       'timestamp',
       'like_count',
-      'comments_count'
+      'comments_count',
+      'username',
+      'owner{username,profile_picture_url,id}'
     ].join(',');
 
     const url = new URL(`${baseUrl}/${hashtagId}/recent_media`);
@@ -150,7 +158,9 @@ async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: s
     'permalink',
     'timestamp',
     'like_count',
-    'comments_count'
+    'comments_count',
+    'username',
+    'owner{username,profile_picture_url,id}'
   ].join(',');
 
   const url = new URL(`${baseUrl}/${hashtagId}/recent_media`);
@@ -187,7 +197,10 @@ export const getRecentPostsByHashtagName = action({
       // Then fetch the recent media
       const media = await getRecentMediaByHashtagInternal(hashtagId, accessToken, accountId, limit, apiVersion);
 
-      return media;
+      // Save the posts to the database (Note: Actions cannot use ctx.db directly)
+      const savedPosts = media;
+
+      return { media, savedPosts };
     } catch (error) {
       console.error('Error getting posts by hashtag name:', error);
       
@@ -200,3 +213,10 @@ export const getRecentPostsByHashtagName = action({
     }
   }
 });
+
+// Helper function to extract hashtags from caption
+function extractHashtagsFromCaption(caption: string): string[] {
+  const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
+  const matches = caption.match(hashtagRegex);
+  return matches ? matches.map(tag => tag.substring(1)) : [];
+}

@@ -57,9 +57,12 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
             </>
           )}
         </div>
+        {/* Three dots menu button - Hidden per user request */}
+        {/* 
         <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
           <MoreHorizontal className="w-4 h-4 text-gray-600" />
         </button>
+        */}
       </div>
 
       {/* Image */}
@@ -74,7 +77,8 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
         />
       </div>
 
-      {/* Action buttons */}
+      {/* Action buttons - Hidden per user request */}
+      {/* 
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-4">
           <button 
@@ -112,13 +116,16 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
           />
         </button>
       </div>
+      */}
 
-      {/* Likes count */}
+      {/* Likes count - Hidden per user request */}
+      {/* 
       <div className="px-3 pb-1">
         <span className="font-semibold text-sm text-gray-900">
           {post.likes.toLocaleString()}件のいいね!
         </span>
       </div>
+      */}
 
       {/* Caption */}
       <div className="px-3 pb-2">

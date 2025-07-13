@@ -1,7 +1,5 @@
 import React from 'react';
-import { Heart, MessageCircle, Bookmark } from 'lucide-react';
 import { Post } from '../types';
-import InstagramEmbed from './InstagramEmbed';
 import InstagramStylePost from './InstagramStylePost';
 
 interface PostCardProps {
