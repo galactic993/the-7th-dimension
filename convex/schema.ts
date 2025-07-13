@@ -14,6 +14,10 @@ export default defineSchema({
     hashtag: v.string(),
     processedAt: v.string(),
     lastChecked: v.string(),
+    username: v.optional(v.string()),
+    ownerUsername: v.optional(v.string()),
+    ownerProfilePictureUrl: v.optional(v.string()),
+    ownerId: v.optional(v.string()),
   }).index("by_instagram_id", ["instagramId"])
     .index("by_hashtag", ["hashtag"])
     .index("by_timestamp", ["timestamp"])
