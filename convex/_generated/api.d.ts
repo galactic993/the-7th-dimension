@@ -14,7 +14,9 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as instagram from "../instagram.js";
+import type * as instagramPosts from "../instagramPosts.js";
 import type * as posts from "../posts.js";
+import type * as scheduler from "../scheduler.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -26,7 +28,9 @@ import type * as posts from "../posts.js";
  */
 declare const fullApi: ApiFromModules<{
   instagram: typeof instagram;
+  instagramPosts: typeof instagramPosts;
   posts: typeof posts;
+  scheduler: typeof scheduler;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

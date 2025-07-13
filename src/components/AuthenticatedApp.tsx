@@ -3,26 +3,21 @@ import Header from './Header';
 import PostGrid from './PostGrid';
 import PostModal from './PostModal';
 import CreatePost from './CreatePost';
-import { mockPosts } from '../data/mockData';
 import { Post } from '../types';
-import { Shuffle, RefreshCw, AlertCircle, Plus } from 'lucide-react';
-import { useInstagramPosts } from '../hooks/useInstagramPosts';
+import { Shuffle, Plus, Loader2 } from 'lucide-react';
+import { useConvexPosts } from '../hooks/useConvexPosts';
 
 function AuthenticatedApp() {
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
-  const hashtagName = import.meta.env.VITE_INSTAGRAM_SEARCH_HASHTAG_NAME || 'the7thdimension';
   const { 
-    instagramPosts, 
-    loading: instagramLoading, 
-    error: instagramError, 
-    refetch: refetchInstagram, 
-    isApiAvailable 
-  } = useInstagramPosts(hashtagName, 5);
+    posts, 
+    loading, 
+    error 
+  } = useConvexPosts();
 
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
@@ -33,12 +28,8 @@ function AuthenticatedApp() {
     return shuffled;
   };
 
-  const allPosts = useMemo(() => {
-    return [...posts, ...instagramPosts];
-  }, [posts, instagramPosts]);
-
   const filteredPosts = useMemo(() => {
-    let filtered = allPosts;
+    let filtered = posts;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -55,39 +46,24 @@ function AuthenticatedApp() {
       filtered = shuffleArray(filtered);
     }
     return filtered;
-  }, [allPosts, searchQuery, isRandomized]);
+  }, [posts, searchQuery, isRandomized]);
 
   const handleRandomShuffle = () => {
     setIsRandomized(!isRandomized);
   };
 
   const handleLike = (postId: string) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === postId
-          ? { 
-              ...post, 
-              isLiked: !post.isLiked,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1
-            }
-          : post
-      )
-    );
+    // TODO: Convexのmutationを使ってDBを更新
+    console.log('Like post:', postId);
   };
 
   const handleSave = (postId: string) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, isSaved: !post.isSaved }
-          : post
-      )
-    );
+    // TODO: Convexのmutationを使ってDBを更新
+    console.log('Save post:', postId);
   };
 
   const handlePostClick = (post: Post) => {
-    const currentPost = posts.find(p => p.id === post.id) || post;
-    setSelectedPost(currentPost);
+    setSelectedPost(post);
   };
 
   const handleCloseModal = () => {
@@ -108,7 +84,24 @@ function AuthenticatedApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen relative">
+      <div className="starry-background">
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="star"></div>
+        <div className="shooting-star"></div>
+        <div className="shooting-star"></div>
+        <div className="shooting-star"></div>
+      </div>
       <Header 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -129,53 +122,31 @@ function AuthenticatedApp() {
                 <span className="font-medium">投稿を作成</span>
               </button>
               <div className="text-sm text-gray-600">
-                {filteredPosts.length}件の投稿
-                {instagramLoading && (
-                  <span className="ml-2 text-blue-600">
-                    <RefreshCw className="w-4 h-4 inline animate-spin" /> Instagram読み込み中...
+                {loading ? (
+                  <span className="flex items-center">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    読み込み中...
                   </span>
+                ) : (
+                  `${filteredPosts.length}件の投稿`
                 )}
               </div>
             </div>
           </div>
           
-          {instagramError && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          {error && (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
                 <div>
-                  <h3 className="text-sm font-medium text-red-800">Instagram API Error</h3>
-                  <p className="text-sm text-red-700 mt-1">{instagramError}</p>
-                  <button
-                    onClick={refetchInstagram}
-                    className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-                  >
-                    再試行
-                  </button>
+                  <p className="text-sm text-yellow-700">{error}</p>
                 </div>
               </div>
             </div>
           )}
           
-          {isApiAvailable && instagramPosts.length > 0 && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                <span className="text-sm text-green-700">
-                  Instagram APIから{instagramPosts.length}件の投稿を取得しました
-                </span>
-              </div>
-            </div>
-          )}
+          
           <div className="flex justify-end gap-2 mb-4">
-            <button
-              onClick={refetchInstagram}
-              disabled={instagramLoading}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 transition-all duration-200 text-sm"
-            >
-              <RefreshCw className={`w-4 h-4 ${instagramLoading ? 'animate-spin' : ''}`} />
-              <span className="font-medium text-sm">Instagram再取得</span>
-            </button>
             <button
               onClick={handleRandomShuffle}
               className={`flex items-center space-x-1.5 px-4 py-2 rounded-full transition-all duration-200 text-sm ${
