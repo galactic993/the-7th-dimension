@@ -296,6 +296,27 @@ export const updateHashtagConfig = mutation({
   }
 });
 
+export const deletePostsByHashtag = internalMutation({
+  args: {
+    hashtag: v.string()
+  },
+  handler: async (ctx, args) => {
+    const posts = await ctx.db
+      .query("instagramPosts")
+      .withIndex("by_hashtag", (q) => q.eq("hashtag", args.hashtag))
+      .collect();
+    
+    let deletedCount = 0;
+    for (const post of posts) {
+      await ctx.db.delete(post._id);
+      deletedCount++;
+    }
+    
+    console.log(`Deleted ${deletedCount} posts for hashtag: ${args.hashtag}`);
+    return deletedCount;
+  }
+});
+
 function getInstagramConfigFromEnv() {
   if (typeof process === 'undefined' || !process.env) {
     return null;
@@ -311,11 +332,11 @@ function getInstagramConfigFromEnv() {
   return {
     accessToken,
     accountId,
-    apiVersion: process.env.INSTAGRAM_API_VERSION || 'v15.0'
+    apiVersion: process.env.INSTAGRAM_API_VERSION || 'v22.0'
   };
 }
 
-async function searchHashtagInternal(hashtagName: string, accessToken: string, accountId: string, apiVersion: string = 'v15.0'): Promise<string> {
+async function searchHashtagInternal(hashtagName: string, accessToken: string, accountId: string, apiVersion: string = 'v22.0'): Promise<string> {
   const baseUrl = `https://graph.facebook.com/${apiVersion}`;
   
   const url = new URL(`${baseUrl}/ig_hashtag_search`);
@@ -323,8 +344,13 @@ async function searchHashtagInternal(hashtagName: string, accessToken: string, a
   url.searchParams.append('q', hashtagName.replace('#', ''));
   url.searchParams.append('access_token', accessToken);
 
+  console.log(`Searching hashtag with URL: ${url.toString().replace(accessToken, '[TOKEN]')}`);
+
   const response = await fetch(url.toString());
   const data: InstagramHashtagSearchResponse = await response.json();
+
+  console.log(`Hashtag search response status: ${response.status}`);
+  console.log(`Hashtag search response:`, JSON.stringify(data, null, 2));
 
   if (!response.ok) {
     throw new Error(data.error?.message || 'Instagram API request failed');
@@ -334,10 +360,11 @@ async function searchHashtagInternal(hashtagName: string, accessToken: string, a
     throw new Error(`Hashtag "${hashtagName}" not found`);
   }
 
+  console.log(`Found hashtag ID: ${data.data[0].id} for hashtag: ${hashtagName}`);
   return data.data[0].id;
 }
 
-async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: string, accountId: string, limit: number = 5, apiVersion: string = 'v15.0'): Promise<InstagramMedia[]> {
+async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: string, accountId: string, limit: number = 5, apiVersion: string = 'v22.0'): Promise<InstagramMedia[]> {
   const baseUrl = `https://graph.facebook.com/${apiVersion}`;
   
   const fields = [
@@ -357,12 +384,18 @@ async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: s
   url.searchParams.append('limit', Math.min(limit, 50).toString());
   url.searchParams.append('access_token', accessToken);
 
+  console.log(`Fetching recent media with URL: ${url.toString().replace(accessToken, '[TOKEN]')}`);
+
   const response = await fetch(url.toString());
   const data: InstagramHashtagResponse = await response.json();
+
+  console.log(`Recent media response status: ${response.status}`);
+  console.log(`Recent media response:`, JSON.stringify(data, null, 2));
 
   if (!response.ok) {
     throw new Error(data.error?.message || 'Instagram API request failed');
   }
 
+  console.log(`Found ${data.data?.length || 0} posts for hashtag ID: ${hashtagId}`);
   return data.data || [];
 } 

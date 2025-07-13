@@ -44,7 +44,7 @@ export const searchHashtag = action({
     apiVersion: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const { hashtagName, accessToken, accountId, apiVersion = 'v15.0' } = args;
+    const { hashtagName, accessToken, accountId, apiVersion = 'v22.0' } = args;
     const baseUrl = `https://graph.facebook.com/${apiVersion}`;
     
     const url = new URL(`${baseUrl}/ig_hashtag_search`);
@@ -81,7 +81,7 @@ export const getRecentMediaByHashtag = action({
     apiVersion: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const { hashtagId, accessToken, accountId, limit = 5, apiVersion = 'v15.0' } = args;
+    const { hashtagId, accessToken, accountId, limit = 5, apiVersion = 'v22.0' } = args;
     const baseUrl = `https://graph.facebook.com/${apiVersion}`;
     
     const fields = [
@@ -117,7 +117,7 @@ export const getRecentMediaByHashtag = action({
   }
 });
 
-async function searchHashtagInternal(hashtagName: string, accessToken: string, accountId: string, apiVersion: string = 'v15.0'): Promise<string> {
+async function searchHashtagInternal(hashtagName: string, accessToken: string, accountId: string, apiVersion: string = 'v22.0'): Promise<string> {
   const baseUrl = `https://graph.facebook.com/${apiVersion}`;
   
   const url = new URL(`${baseUrl}/ig_hashtag_search`);
@@ -139,7 +139,7 @@ async function searchHashtagInternal(hashtagName: string, accessToken: string, a
   return data.data[0].id;
 }
 
-async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: string, accountId: string, limit: number = 5, apiVersion: string = 'v15.0'): Promise<InstagramMedia[]> {
+async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: string, accountId: string, limit: number = 5, apiVersion: string = 'v22.0'): Promise<InstagramMedia[]> {
   const baseUrl = `https://graph.facebook.com/${apiVersion}`;
   
   const fields = [
@@ -178,7 +178,7 @@ export const getRecentPostsByHashtagName = action({
     apiVersion: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const { hashtagName, accessToken, accountId, limit = 5, apiVersion = 'v15.0' } = args;
+    const { hashtagName, accessToken, accountId, limit = 5, apiVersion = 'v22.0' } = args;
 
     try {
       // First, get the hashtag ID

@@ -1,3 +1,133 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 星空背景アニメーション */
+@keyframes sparkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes drift {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(10px) translateY(-10px); }
+  50% { transform: translateX(-5px) translateY(-20px); }
+  75% { transform: translateX(-10px) translateY(-5px); }
+  100% { transform: translateX(0) translateY(0); }
+}
+
+.starry-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0c0e1a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #0c0e1a 100%);
+  overflow: hidden;
+  z-index: -1;
+}
+
+.starry-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(2px 2px at 160px 30px, #fff, transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: drift 20s ease-in-out infinite;
+}
+
+.starry-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 50px 50px, #fff, transparent),
+    radial-gradient(1px 1px at 100px 120px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 150px 75px, #fff, transparent),
+    radial-gradient(1px 1px at 200px 25px, rgba(255,255,255,0.5), transparent),
+    radial-gradient(2px 2px at 250px 100px, #fff, transparent);
+  background-repeat: repeat;
+  background-size: 300px 150px;
+  animation: drift 25s ease-in-out infinite reverse;
+}
+
+.star {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+.star:nth-child(1) { width: 2px; height: 2px; top: 10%; left: 10%; animation-delay: 0s; }
+.star:nth-child(2) { width: 1px; height: 1px; top: 20%; left: 20%; animation-delay: 0.5s; }
+.star:nth-child(3) { width: 3px; height: 3px; top: 15%; left: 35%; animation-delay: 1s; }
+.star:nth-child(4) { width: 1px; height: 1px; top: 25%; left: 50%; animation-delay: 1.5s; }
+.star:nth-child(5) { width: 2px; height: 2px; top: 30%; left: 65%; animation-delay: 2s; }
+.star:nth-child(6) { width: 1px; height: 1px; top: 40%; left: 80%; animation-delay: 2.5s; }
+.star:nth-child(7) { width: 2px; height: 2px; top: 50%; left: 15%; animation-delay: 3s; }
+.star:nth-child(8) { width: 1px; height: 1px; top: 60%; left: 30%; animation-delay: 0.3s; }
+.star:nth-child(9) { width: 3px; height: 3px; top: 70%; left: 45%; animation-delay: 0.8s; }
+.star:nth-child(10) { width: 1px; height: 1px; top: 80%; left: 60%; animation-delay: 1.3s; }
+.star:nth-child(11) { width: 2px; height: 2px; top: 85%; left: 75%; animation-delay: 1.8s; }
+.star:nth-child(12) { width: 1px; height: 1px; top: 5%; left: 85%; animation-delay: 2.3s; }
+
+.shooting-star {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(45deg, transparent, #fff, transparent);
+  animation: shooting 4s ease-out infinite;
+  opacity: 0;
+}
+
+@keyframes shooting {
+  0% { 
+    transform: translateX(-100px) translateY(-100px);
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 1; 
+  }
+  90% { 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translateX(200px) translateY(200px);
+    opacity: 0; 
+  }
+}
+
+.shooting-star:nth-child(13) { 
+  width: 50px; 
+  top: 10%; 
+  left: 10%; 
+  animation-delay: 2s; 
+}
+.shooting-star:nth-child(14) { 
+  width: 80px; 
+  top: 30%; 
+  left: 60%; 
+  animation-delay: 6s; 
+}
+.shooting-star:nth-child(15) { 
+  width: 60px; 
+  top: 70%; 
+  left: 20%; 
+  animation-delay: 10s; 
+}

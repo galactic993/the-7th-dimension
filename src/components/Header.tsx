@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { signOut } = useClerk();
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-purple-100/90 via-violet-50/90 to-purple-100/90 backdrop-blur-md border-b border-purple-200/50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
