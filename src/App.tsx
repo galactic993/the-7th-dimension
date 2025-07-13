@@ -1,10 +1,9 @@
 import React from 'react';
 import { useUser } from '@clerk/clerk-react';
-import Login from './components/Login';
-import AuthenticatedApp from './components/AuthenticatedApp';
+import MainApp from './components/MainApp';
 
 function App() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded } = useUser();
 
   if (!isLoaded) {
     return (
@@ -34,11 +33,7 @@ function App() {
     );
   }
 
-  if (!isSignedIn) {
-    return <Login />;
-  }
-
-  return <AuthenticatedApp />;
+  return <MainApp />;
 }
 
 export default App;

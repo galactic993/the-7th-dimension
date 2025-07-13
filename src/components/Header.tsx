@@ -1,6 +1,6 @@
 import React from 'react';
-import { Search, LogOut } from 'lucide-react';
-import { useClerk } from '@clerk/clerk-react';
+import { Search, LogOut, LogIn } from 'lucide-react';
+import { useClerk, useUser } from '@clerk/clerk-react';
 
 interface HeaderProps {
   searchQuery: string;
@@ -11,7 +11,9 @@ const Header: React.FC<HeaderProps> = ({
   searchQuery, 
   onSearchChange
 }) => {
-  const { signOut } = useClerk();
+  const { signOut, openSignIn } = useClerk();
+  const { isSignedIn } = useUser();
+  
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-purple-100/90 via-violet-50/90 to-purple-100/90 backdrop-blur-md border-b border-purple-200/50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -37,13 +39,23 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => signOut()}
-            className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="text-sm font-medium">ログアウト</span>
-          </button>
+          {isSignedIn ? (
+            <button
+              onClick={() => signOut()}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">ログアウト</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => openSignIn()}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="text-sm font-medium">ログイン</span>
+            </button>
+          )}
         </div>
       </div>
     </header>
