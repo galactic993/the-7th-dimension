@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Image, Video, Mic, MapPin, Hash, Upload } from 'lucide-react';
+import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
@@ -17,7 +17,6 @@ interface FilePreview {
 
 const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated }) => {
   const [caption, setCaption] = useState('');
-  const [location, setLocation] = useState('');
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -156,14 +155,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         videoUrl,
         caption: caption.trim(),
         tags,
-        location: location.trim() || undefined,
+        location: undefined,
       });
 
       console.log('投稿作成成功:', postId);
 
       // Reset form
       setCaption('');
-      setLocation('');
       setTags([]);
       setFiles([]);
       
@@ -309,21 +307,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
               onChange={(e) => handleCaptionChange(e.target.value)}
               placeholder="あなたの体験をシェアしてください... #ハッシュタグを使ってみましょう"
               className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Location */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              場所（任意）
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="場所を追加"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
