@@ -68,13 +68,13 @@ export const useInstagramPosts = (hashtagName?: string, limit: number = 5): UseI
     } finally {
       setLoading(false);
     }
-  }, [getInstagramPosts, accessToken, accountId, hashtagName, limit, apiVersion]);
+  }, [getInstagramPosts, hashtagName, limit]);
 
   useEffect(() => {
-    if (hashtagName && accessToken && accountId) {
+    if (hashtagName && isApiAvailable) {
       fetchInstagramPosts();
     }
-  }, [fetchInstagramPosts, hashtagName, accessToken, accountId]);
+  }, [fetchInstagramPosts, hashtagName, isApiAvailable]);
 
   return {
     instagramPosts,

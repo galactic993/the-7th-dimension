@@ -190,6 +190,12 @@ export const getRecentPostsByHashtagName = action({
       return media;
     } catch (error) {
       console.error('Error getting posts by hashtag name:', error);
+      
+      // Check if error is related to expired token
+      if (error instanceof Error && error.message.includes('Session has expired')) {
+        throw new Error(`Instagram access token has expired. Please refresh your token at: https://developers.facebook.com/tools/explorer/`);
+      }
+      
       throw new Error(`Failed to fetch posts for hashtag: ${hashtagName}`);
     }
   }
