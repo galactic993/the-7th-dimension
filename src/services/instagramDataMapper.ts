@@ -58,7 +58,8 @@ export const mapInstagramMediaToPost = (media: InstagramMedia): Post => {
     isLiked: false,
     isSaved: false,
     source: 'instagram' as const,
-    permalink: media.permalink
+    permalink: media.permalink,
+    instagramUrl: media.permalink
   };
 };
 

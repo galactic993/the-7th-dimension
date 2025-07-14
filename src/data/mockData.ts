@@ -167,5 +167,26 @@ export const mockPosts: Post[] = [
     isLiked: false,
     isSaved: false,
     source: 'mock' as const
+  },
+  {
+    id: 'instagram-test',
+    user: {
+      id: 'instagram',
+      username: 'instagram',
+      displayName: 'Instagram',
+      avatar: 'https://images.pexels.com/photos/1484794/pexels-photo-1484794.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      isVerified: true
+    },
+    imageUrl: 'https://via.placeholder.com/400x400.png?text=Instagram+Embed',
+    caption: 'This is a test Instagram embed post',
+    likes: 1000,
+    comments: [],
+    timestamp: '1h',
+    tags: ['test', 'instagram', 'embed'],
+    location: 'Test Location',
+    isLiked: false,
+    isSaved: false,
+    source: 'instagram' as const,
+    instagramUrl: 'https://www.instagram.com/p/C-example/'
   }
 ];

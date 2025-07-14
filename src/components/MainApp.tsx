@@ -10,15 +10,21 @@ import { useConvexPosts } from '../hooks/useConvexPosts';
 
 function MainApp() {
   const { isSignedIn } = useUser();
-  const [searchQuery, setSearchQuery] = useState('');
+  // useConvexPostsの検索機能を使用
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const { 
-    posts, 
     loading, 
-    error 
+    error,
+    currentPage,
+    totalPages,
+    totalPosts,
+    setCurrentPage,
+    paginatedPosts,
+    setSearchQuery: setConvexSearchQuery,
+    searchQuery: convexSearchQuery
   } = useConvexPosts();
 
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -30,25 +36,19 @@ function MainApp() {
     return shuffled;
   };
 
-  const filteredPosts = useMemo(() => {
-    let filtered = posts;
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.caption.toLowerCase().includes(query) ||
-        post.user.username.toLowerCase().includes(query) ||
-        post.user.displayName.toLowerCase().includes(query) ||
-        post.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        (post.location && post.location.toLowerCase().includes(query))
-      );
+  const displayPosts = useMemo(() => {
+    if (!paginatedPosts || paginatedPosts.length === 0) {
+      return [];
     }
+    
+    let posts = paginatedPosts;
 
     if (isRandomized) {
-      filtered = shuffleArray(filtered);
+      posts = shuffleArray(posts);
     }
-    return filtered;
-  }, [posts, searchQuery, isRandomized]);
+    
+    return posts;
+  }, [paginatedPosts, isRandomized]);
 
   const handleRandomShuffle = () => {
     setIsRandomized(!isRandomized);
@@ -117,8 +117,8 @@ function MainApp() {
         <div className="shooting-star"></div>
       </div>
       <Header 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchQuery={convexSearchQuery}
+        onSearchChange={setConvexSearchQuery}
       />
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -142,7 +142,7 @@ function MainApp() {
                     読み込み中...
                   </span>
                 ) : (
-                  `${filteredPosts.length}件の投稿`
+                  `${totalPosts}件の投稿`
                 )}
               </div>
             </div>
@@ -178,10 +178,14 @@ function MainApp() {
         </div>
 
         <PostGrid
-          posts={filteredPosts}
+          posts={displayPosts}
           onLike={handleLike}
           onSave={handleSave}
           onPostClick={handlePostClick}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalPosts={totalPosts}
+          onPageChange={setCurrentPage}
         />
       </main>
 

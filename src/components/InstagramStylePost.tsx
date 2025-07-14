@@ -143,9 +143,9 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
       {post.tags.length > 0 && (
         <div className="px-3 pb-2">
           <div className="flex flex-wrap gap-1">
-            {post.tags.slice(0, 5).map((tag) => (
+            {post.tags.slice(0, 5).map((tag, index) => (
               <span
-                key={tag}
+                key={`${post.id}-${tag}-${index}`}
                 className="text-sm text-blue-900 hover:underline cursor-pointer"
               >
                 #{tag}

@@ -7,10 +7,22 @@ interface UseConvexPostsResult {
   posts: Post[];
   loading: boolean;
   error: string | null;
+  currentPage: number;
+  totalPages: number;
+  totalPosts: number;
+  postsPerPage: number;
+  setCurrentPage: (page: number) => void;
+  paginatedPosts: Post[];
+  filteredPosts: Post[];
+  setSearchQuery: (query: string) => void;
+  searchQuery: string;
 }
 
 export const useConvexPosts = (): UseConvexPostsResult => {
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const postsPerPage = 20;
 
   // ConvexからInstagram投稿を取得
   const instagramPosts = useQuery(api.instagramPosts.getStoredPosts, {});
@@ -49,6 +61,8 @@ export const useConvexPosts = (): UseConvexPostsResult => {
         isLiked: false,
         isSaved: false,
         source: 'instagram',
+        permalink: post.permalink,
+        instagramUrl: post.permalink
       }));
       allPosts.push(...convertedInstagramPosts);
     }
@@ -72,10 +86,52 @@ export const useConvexPosts = (): UseConvexPostsResult => {
     }
   }, [loading, posts.length]);
 
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+    
+    const query = searchQuery.toLowerCase();
+    return posts.filter(post =>
+      post.caption.toLowerCase().includes(query) ||
+      post.user.username.toLowerCase().includes(query) ||
+      post.user.displayName.toLowerCase().includes(query) ||
+      post.tags.some(tag => tag.toLowerCase().includes(query)) ||
+      (post.location && post.location.toLowerCase().includes(query))
+    );
+  }, [posts, searchQuery]);
+
+  const totalPosts = filteredPosts.length;
+  const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+  const paginatedPosts = useMemo(() => {
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    return filteredPosts.slice(startIndex, endIndex);
+  }, [filteredPosts, currentPage, postsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+
   return {
     posts,
     loading,
     error,
+    currentPage,
+    totalPages,
+    totalPosts,
+    postsPerPage,
+    setCurrentPage,
+    paginatedPosts,
+    filteredPosts,
+    setSearchQuery,
+    searchQuery,
   };
 };
 
