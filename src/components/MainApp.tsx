@@ -123,7 +123,8 @@ function MainApp() {
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          {/* Desktop Header */}
+          <div className="hidden sm:flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">
               あなたはどんなことを感じましたか？🌟
             </h2>
@@ -147,6 +148,32 @@ function MainApp() {
               </div>
             </div>
           </div>
+
+          {/* Mobile Header */}
+          <div className="flex sm:hidden flex-col space-y-3 mb-4">
+            <h2 className="text-lg font-bold text-gray-900 text-center">
+              あなたはどんなことを感じましたか？🌟
+            </h2>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={handleCreatePost}
+                className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 shadow-lg transition-all duration-200"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="font-medium text-sm">投稿を作成</span>
+              </button>
+              <div className="text-xs text-gray-600 text-center">
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    読み込み中...
+                  </span>
+                ) : (
+                  `${totalPosts}件の投稿`
+                )}
+              </div>
+            </div>
+          </div>
           
           {error && (
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -160,12 +187,30 @@ function MainApp() {
           )}
           
           
-          <div className="flex justify-end gap-2 mb-4">
+          {/* Desktop Random Button */}
+          <div className="hidden sm:flex justify-end gap-2 mb-4">
             <button
               onClick={handleRandomShuffle}
               className={`flex items-center space-x-1.5 px-4 py-2 rounded-full transition-all duration-200 text-sm ${
                 isRandomized
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transform scale-105'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-purple-300 hover:shadow-md'
+              }`}
+            >
+              <Shuffle className={`w-4 h-4 ${isRandomized ? 'animate-pulse' : ''}`} />
+              <span className="font-medium text-sm">
+                {isRandomized ? 'ランダム表示中' : 'ランダムに並び替え'}
+              </span>
+            </button>
+          </div>
+
+          {/* Mobile Random Button */}
+          <div className="flex sm:hidden justify-center mb-4">
+            <button
+              onClick={handleRandomShuffle}
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-full transition-all duration-200 text-sm w-full max-w-xs ${
+                isRandomized
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-purple-300 hover:shadow-md'
               }`}
             >
