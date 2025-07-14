@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Heart, MessageCircle, Bookmark, MapPin, MoreHorizontal } from 'lucide-react';
 import { Post } from '../types';
+import ConvexImage from './ConvexImage';
 
 interface PostModalProps {
   post: Post;
@@ -31,8 +32,8 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
         <div className="flex h-full">
           {/* Image */}
           <div className="flex-1 bg-black flex items-center justify-center">
-            <img
-              src={post.imageUrl}
+            <ConvexImage
+              storageId={post.imageUrl}
               alt="Post"
               className="max-w-full max-h-full object-contain"
             />

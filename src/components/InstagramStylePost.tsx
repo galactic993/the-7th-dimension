@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal } from 'lucide-react';
 import { Post } from '../types';
+import ConvexImage from './ConvexImage';
 
 interface InstagramStylePostProps {
   post: Post;
@@ -70,8 +71,8 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
         className="aspect-square w-full cursor-pointer"
         onClick={() => onClick(post)}
       >
-        <img
-          src={post.imageUrl}
+        <ConvexImage
+          storageId={post.imageUrl}
           alt="Post content"
           className="w-full h-full object-cover"
         />

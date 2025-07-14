@@ -64,9 +64,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         return;
       }
 
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください');
+      // Check file size (1GB limit)
+      if (file.size > 1024 * 1024 * 1024) {
+        alert('ファイルサイズは1GB以下にしてください');
         return;
       }
 
