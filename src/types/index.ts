@@ -20,6 +20,7 @@ export interface Post {
   isSaved: boolean;
   source?: 'mock' | 'instagram';
   permalink?: string;
+  instagramUrl?: string;
 }
 
 export interface Comment {

@@ -14,6 +14,10 @@ export default defineSchema({
     hashtag: v.string(),
     processedAt: v.string(),
     lastChecked: v.string(),
+    username: v.optional(v.string()),
+    ownerUsername: v.optional(v.string()),
+    ownerProfilePictureUrl: v.optional(v.string()),
+    ownerId: v.optional(v.string()),
   }).index("by_instagram_id", ["instagramId"])
     .index("by_hashtag", ["hashtag"])
     .index("by_timestamp", ["timestamp"])
@@ -42,8 +46,15 @@ export default defineSchema({
     isVerified: v.boolean(),
     source: v.string(),
     timestamp: v.string(),
+    permalink: v.optional(v.string()),
+    instagramId: v.optional(v.string()),
   }).index("by_user", ["userId"])
-    .index("by_timestamp", ["timestamp"]),
+    .index("by_timestamp", ["timestamp"])
+    .index("by_source", ["source"])
+    .index("by_permalink", ["permalink"])
+    .index("by_source_permalink", ["source", "permalink"])
+    .index("by_instagram_id", ["instagramId"])
+    .index("by_source_instagram_id", ["source", "instagramId"]),
 
   likes: defineTable({
     postId: v.id("posts"),

@@ -52,7 +52,6 @@ src/
 │   ├── PostGrid.tsx             # Instagram-style grid layout
 │   ├── PostCard.tsx             # Individual post display
 │   ├── PostModal.tsx            # Detailed post view
-│   └── InstagramEmbed.tsx       # Real Instagram post embedding
 ├── hooks/
 │   └── useInstagramPosts.ts     # Custom hook for post data management
 ├── services/

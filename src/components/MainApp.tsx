@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import Header from './Header';
 import PostGrid from './PostGrid';
 import PostModal from './PostModal';
@@ -7,16 +8,23 @@ import { Post } from '../types';
 import { Shuffle, Plus, Loader2 } from 'lucide-react';
 import { useConvexPosts } from '../hooks/useConvexPosts';
 
-function AuthenticatedApp() {
-  const [searchQuery, setSearchQuery] = useState('');
+function MainApp() {
+  const { isSignedIn } = useUser();
+  // useConvexPostsの検索機能を使用
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const { 
-    posts, 
     loading, 
-    error 
+    error,
+    currentPage,
+    totalPages,
+    totalPosts,
+    setCurrentPage,
+    paginatedPosts,
+    setSearchQuery: setConvexSearchQuery,
+    searchQuery: convexSearchQuery
   } = useConvexPosts();
 
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -28,36 +36,38 @@ function AuthenticatedApp() {
     return shuffled;
   };
 
-  const filteredPosts = useMemo(() => {
-    let filtered = posts;
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.caption.toLowerCase().includes(query) ||
-        post.user.username.toLowerCase().includes(query) ||
-        post.user.displayName.toLowerCase().includes(query) ||
-        post.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        (post.location && post.location.toLowerCase().includes(query))
-      );
+  const displayPosts = useMemo(() => {
+    if (!paginatedPosts || paginatedPosts.length === 0) {
+      return [];
     }
+    
+    let posts = paginatedPosts;
 
     if (isRandomized) {
-      filtered = shuffleArray(filtered);
+      posts = shuffleArray(posts);
     }
-    return filtered;
-  }, [posts, searchQuery, isRandomized]);
+    
+    return posts;
+  }, [paginatedPosts, isRandomized]);
 
   const handleRandomShuffle = () => {
     setIsRandomized(!isRandomized);
   };
 
   const handleLike = (postId: string) => {
+    if (!isSignedIn) {
+      alert('いいねするにはログインが必要です');
+      return;
+    }
     // TODO: Convexのmutationを使ってDBを更新
     console.log('Like post:', postId);
   };
 
   const handleSave = (postId: string) => {
+    if (!isSignedIn) {
+      alert('保存するにはログインが必要です');
+      return;
+    }
     // TODO: Convexのmutationを使ってDBを更新
     console.log('Save post:', postId);
   };
@@ -71,6 +81,10 @@ function AuthenticatedApp() {
   };
 
   const handleCreatePost = () => {
+    if (!isSignedIn) {
+      alert('投稿するにはログインが必要です');
+      return;
+    }
     setIsCreatePostOpen(true);
   };
 
@@ -103,13 +117,14 @@ function AuthenticatedApp() {
         <div className="shooting-star"></div>
       </div>
       <Header 
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchQuery={convexSearchQuery}
+        onSearchChange={setConvexSearchQuery}
       />
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          {/* Desktop Header */}
+          <div className="hidden sm:flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">
               あなたはどんなことを感じましたか？🌟
             </h2>
@@ -128,7 +143,33 @@ function AuthenticatedApp() {
                     読み込み中...
                   </span>
                 ) : (
-                  `${filteredPosts.length}件の投稿`
+                  `${totalPosts}件の投稿`
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Header */}
+          <div className="flex sm:hidden flex-col space-y-3 mb-4">
+            <h2 className="text-lg font-bold text-gray-900 text-center">
+              あなたはどんなことを感じましたか？🌟
+            </h2>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={handleCreatePost}
+                className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 shadow-lg transition-all duration-200"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="font-medium text-sm">投稿を作成</span>
+              </button>
+              <div className="text-xs text-gray-600 text-center">
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    読み込み中...
+                  </span>
+                ) : (
+                  `${totalPosts}件の投稿`
                 )}
               </div>
             </div>
@@ -146,7 +187,8 @@ function AuthenticatedApp() {
           )}
           
           
-          <div className="flex justify-end gap-2 mb-4">
+          {/* Desktop Random Button */}
+          <div className="hidden sm:flex justify-end gap-2 mb-4">
             <button
               onClick={handleRandomShuffle}
               className={`flex items-center space-x-1.5 px-4 py-2 rounded-full transition-all duration-200 text-sm ${
@@ -161,13 +203,34 @@ function AuthenticatedApp() {
               </span>
             </button>
           </div>
+
+          {/* Mobile Random Button */}
+          <div className="flex sm:hidden justify-center mb-4">
+            <button
+              onClick={handleRandomShuffle}
+              className={`flex items-center space-x-2 px-4 py-2.5 rounded-full transition-all duration-200 text-sm w-full max-w-xs ${
+                isRandomized
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-purple-300 hover:shadow-md'
+              }`}
+            >
+              <Shuffle className={`w-4 h-4 ${isRandomized ? 'animate-pulse' : ''}`} />
+              <span className="font-medium text-sm">
+                {isRandomized ? 'ランダム表示中' : 'ランダムに並び替え'}
+              </span>
+            </button>
+          </div>
         </div>
 
         <PostGrid
-          posts={filteredPosts}
+          posts={displayPosts}
           onLike={handleLike}
           onSave={handleSave}
           onPostClick={handlePostClick}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalPosts={totalPosts}
+          onPageChange={setCurrentPage}
         />
       </main>
 
@@ -181,13 +244,15 @@ function AuthenticatedApp() {
         />
       )}
 
-      <CreatePost
-        isOpen={isCreatePostOpen}
-        onClose={handleCloseCreatePost}
-        onPostCreated={handlePostCreated}
-      />
+      {isSignedIn && (
+        <CreatePost
+          isOpen={isCreatePostOpen}
+          onClose={handleCloseCreatePost}
+          onPostCreated={handlePostCreated}
+        />
+      )}
     </div>
   );
 }
 
-export default AuthenticatedApp;
+export default MainApp;
