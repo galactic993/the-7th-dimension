@@ -1,16 +1,8 @@
 import React from 'react';
-import { Search, LogOut, LogIn } from 'lucide-react';
+import { LogOut, LogIn } from 'lucide-react';
 import { useClerk, useUser } from '@clerk/clerk-react';
 
-interface HeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-}
-
-const Header: React.FC<HeaderProps> = ({ 
-  searchQuery, 
-  onSearchChange
-}) => {
+const Header: React.FC = () => {
   const { signOut, openSignIn } = useClerk();
   const { isSignedIn } = useUser();
   
@@ -25,33 +17,6 @@ const Header: React.FC<HeaderProps> = ({
             </h1>
           </div>
 
-          {/* Search Bar - Hidden on very small screens */}
-          <div className="hidden sm:flex flex-1 max-w-lg mx-4 lg:mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="検索..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-          </div>
-
-          {/* Search Bar for Mobile - Simplified */}
-          <div className="flex sm:hidden flex-1 max-w-xs mx-2">
-            <div className="relative w-full">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
-              <input
-                type="text"
-                placeholder="検索"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-7 pr-2 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-1 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-          </div>
 
           {/* Auth Button */}
           <div className="flex-shrink-0">
