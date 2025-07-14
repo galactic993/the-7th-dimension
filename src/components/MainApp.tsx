@@ -4,6 +4,7 @@ import Header from './Header';
 import PostGrid from './PostGrid';
 import PostModal from './PostModal';
 import CreatePost from './CreatePost';
+import LoginPromptDialog from './LoginPromptDialog';
 import { Post } from '../types';
 import { Shuffle, Plus, Loader2 } from 'lucide-react';
 import { useConvexPosts } from '../hooks/useConvexPosts';
@@ -14,6 +15,7 @@ function MainApp() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isRandomized, setIsRandomized] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [loginPrompt, setLoginPrompt] = useState<{ isOpen: boolean; message: string }>({ isOpen: false, message: '' });
 
   const { 
     loading, 
@@ -56,7 +58,7 @@ function MainApp() {
 
   const handleLike = (postId: string) => {
     if (!isSignedIn) {
-      alert('いいねするにはログインが必要です');
+      setLoginPrompt({ isOpen: true, message: 'いいねするにはログインが必要です' });
       return;
     }
     // TODO: Convexのmutationを使ってDBを更新
@@ -65,7 +67,7 @@ function MainApp() {
 
   const handleSave = (postId: string) => {
     if (!isSignedIn) {
-      alert('保存するにはログインが必要です');
+      setLoginPrompt({ isOpen: true, message: '保存するにはログインが必要です' });
       return;
     }
     // TODO: Convexのmutationを使ってDBを更新
@@ -82,7 +84,7 @@ function MainApp() {
 
   const handleCreatePost = () => {
     if (!isSignedIn) {
-      alert('投稿するにはログインが必要です');
+      setLoginPrompt({ isOpen: true, message: '投稿するにはログインが必要です' });
       return;
     }
     setIsCreatePostOpen(true);
@@ -95,6 +97,10 @@ function MainApp() {
   const handlePostCreated = () => {
     // Refresh the page or refetch posts after creating a new post
     window.location.reload();
+  };
+
+  const handleCloseLoginPrompt = () => {
+    setLoginPrompt({ isOpen: false, message: '' });
   };
 
   return (
@@ -251,6 +257,12 @@ function MainApp() {
           onPostCreated={handlePostCreated}
         />
       )}
+
+      <LoginPromptDialog
+        isOpen={loginPrompt.isOpen}
+        message={loginPrompt.message}
+        onClose={handleCloseLoginPrompt}
+      />
     </div>
   );
 }
