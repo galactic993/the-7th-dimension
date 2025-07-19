@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "npx convex deploy --cmd 'npm run build'",
+  "buildCommand": "echo \"CONVEX_DEPLOY_KEY: $CONVEX_DEPLOY_KEY\" && npx convex deploy --cmd 'npm run build'",
   "devCommand": "npm run dev",
   "outputDirectory": "dist",
   "redirects": [
