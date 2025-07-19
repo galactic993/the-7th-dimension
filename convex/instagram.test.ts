@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { convexTest } from "convex-test";
-import { searchHashtag, getRecentMediaByHashtag, getRecentPostsByHashtagName } from "./instagram";
+import { api } from "./_generated/api";
 import schema from "./schema";
 
 const t = convexTest(schema);
@@ -31,7 +31,7 @@ describe("Instagram API関数", () => {
         json: async () => mockResponse
       });
 
-      const result = await t.action(searchHashtag, {
+      const result = await t.action(api.instagram.searchHashtag, {
         hashtagName: "the7thdimension",
         accessToken: "test_token",
         accountId: "test_account_id"
@@ -54,7 +54,7 @@ describe("Instagram API関数", () => {
       });
 
       await expect(
-        t.action(searchHashtag, {
+        t.action(api.instagram.searchHashtag, {
           hashtagName: "nonexistent",
           accessToken: "test_token",
           accountId: "test_account_id"
@@ -77,7 +77,7 @@ describe("Instagram API関数", () => {
       });
 
       await expect(
-        t.action(searchHashtag, {
+        t.action(api.instagram.searchHashtag, {
           hashtagName: "test",
           accessToken: "invalid_token",
           accountId: "test_account_id"
@@ -100,7 +100,7 @@ describe("Instagram API関数", () => {
         json: async () => mockResponse
       });
 
-      await t.action(searchHashtag, {
+      await t.action(api.instagram.searchHashtag, {
         hashtagName: "#the7thdimension",
         accessToken: "test_token",
         accountId: "test_account_id"
@@ -135,7 +135,7 @@ describe("Instagram API関数", () => {
         json: async () => mockResponse
       });
 
-      const result = await t.action(getRecentMediaByHashtag, {
+      const result = await t.action(api.instagram.getRecentMediaByHashtag, {
         hashtagId: "123456789",
         accessToken: "test_token",
         accountId: "test_account_id"
@@ -157,7 +157,7 @@ describe("Instagram API関数", () => {
         json: async () => mockResponse
       });
 
-      await t.action(getRecentMediaByHashtag, {
+      await t.action(api.instagram.getRecentMediaByHashtag, {
         hashtagId: "123456789",
         accessToken: "test_token",
         accountId: "test_account_id",
@@ -179,7 +179,7 @@ describe("Instagram API関数", () => {
         json: async () => mockResponse
       });
 
-      await t.action(getRecentMediaByHashtag, {
+      await t.action(api.instagram.getRecentMediaByHashtag, {
         hashtagId: "123456789",
         accessToken: "test_token",
         accountId: "test_account_id",
@@ -206,7 +206,7 @@ describe("Instagram API関数", () => {
       });
 
       await expect(
-        t.action(getRecentMediaByHashtag, {
+        t.action(api.instagram.getRecentMediaByHashtag, {
           hashtagId: "invalid_id",
           accessToken: "test_token",
           accountId: "test_account_id"
@@ -252,7 +252,7 @@ describe("Instagram API関数", () => {
           json: async () => mediaResponse
         });
 
-      const result = await t.action(getRecentPostsByHashtagName, {
+      const result = await t.action(api.instagram.getRecentPostsByHashtagName, {
         hashtagName: "the7thdimension",
         accessToken: "test_token",
         accountId: "test_account_id"
@@ -280,7 +280,7 @@ describe("Instagram API関数", () => {
       });
 
       await expect(
-        t.action(getRecentPostsByHashtagName, {
+        t.action(api.instagram.getRecentPostsByHashtagName, {
           hashtagName: "nonexistent",
           accessToken: "test_token",
           accountId: "test_account_id"
@@ -303,7 +303,7 @@ describe("Instagram API関数", () => {
       });
 
       await expect(
-        t.action(getRecentPostsByHashtagName, {
+        t.action(api.instagram.getRecentPostsByHashtagName, {
           hashtagName: "test",
           accessToken: "expired_token",
           accountId: "test_account_id"
@@ -335,7 +335,7 @@ describe("Instagram API関数", () => {
           json: async () => mediaResponse
         });
 
-      await t.action(getRecentPostsByHashtagName, {
+      await t.action(api.instagram.getRecentPostsByHashtagName, {
         hashtagName: "test",
         accessToken: "test_token",
         accountId: "test_account_id",

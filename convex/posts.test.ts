@@ -1,13 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { convexTest } from "convex-test";
-import { 
-  createPost,
-  getAllPosts,
-  toggleLike,
-  toggleSave,
-  generateUploadUrl,
-  getFileUrl
-} from "./posts";
+import { api } from "./_generated/api";
 import schema from "./schema";
 
 const t = convexTest(schema);
@@ -42,14 +35,14 @@ describe("Posts関数", () => {
         location: "Test Location"
       };
 
-      const result = await t.mutation(createPost, postData, { 
+      const result = await t.mutation(api.posts.createPost, postData, { 
         ctx: mockCtx,
         auth: { getUserId: () => mockAuthUserId }
       });
 
       expect(result).toBeDefined();
 
-      const posts = await t.query(getAllPosts, {});
+      const posts = await t.query(api.posts.getAllPosts, {});
       expect(posts).toHaveLength(1);
       expect(posts[0].caption).toBe("Test caption");
       expect(posts[0].tags).toEqual(["test", "vitest"]);
@@ -66,7 +59,7 @@ describe("Posts関数", () => {
       };
 
       await expect(
-        t.mutation(createPost, postData, { 
+        t.mutation(api.posts.createPost, postData, { 
           auth: { getUserId: () => null }
         })
       ).rejects.toThrow("User must be authenticated to create posts");
@@ -86,7 +79,7 @@ describe("Posts関数", () => {
       };
 
       await expect(
-        t.mutation(createPost, postData, { 
+        t.mutation(api.posts.createPost, postData, { 
           ctx: mockCtx,
           auth: { getUserId: () => mockAuthUserId }
         })
@@ -108,12 +101,12 @@ describe("Posts関数", () => {
         tags: ["media"]
       };
 
-      await t.mutation(createPost, postData, { 
+      await t.mutation(api.posts.createPost, postData, { 
         ctx: mockCtx,
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      const posts = await t.query(getAllPosts, {});
+      const posts = await t.query(api.posts.getAllPosts, {});
       expect(posts[0].audioUrl).toBe("https://example.com/audio.mp3");
       expect(posts[0].videoUrl).toBe("https://example.com/video.mp4");
     });
@@ -128,7 +121,7 @@ describe("Posts関数", () => {
       };
 
       // テストデータを作成
-      await t.mutation(createPost, {
+      await t.mutation(api.posts.createPost, {
         imageUrls: ["https://example.com/image1.jpg"],
         caption: "Test post 1",
         tags: ["test1"],
@@ -138,7 +131,7 @@ describe("Posts関数", () => {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      await t.mutation(createPost, {
+      await t.mutation(api.posts.createPost, {
         imageUrls: ["https://example.com/image2.jpg"],
         caption: "Test post 2",
         tags: ["test2"],
@@ -150,7 +143,7 @@ describe("Posts関数", () => {
     });
 
     it("すべての投稿を取得する", async () => {
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -160,7 +153,7 @@ describe("Posts関数", () => {
     });
 
     it("認証されていないユーザーでも投稿を取得できる", async () => {
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => null }
       });
 
@@ -170,7 +163,7 @@ describe("Posts関数", () => {
     });
 
     it("投稿データが正しい形式で返される", async () => {
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -200,7 +193,7 @@ describe("Posts関数", () => {
         }
       };
 
-      postId = await t.mutation(createPost, {
+      postId = await t.mutation(api.posts.createPost, {
         imageUrls: ["https://example.com/image.jpg"],
         caption: "Test post",
         tags: ["test"]
@@ -211,11 +204,11 @@ describe("Posts関数", () => {
     });
 
     it("いいねを追加する", async () => {
-      await t.mutation(toggleLike, { postId }, {
+      await t.mutation(api.posts.toggleLike, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -225,16 +218,16 @@ describe("Posts関数", () => {
 
     it("いいねを削除する", async () => {
       // 最初にいいねを追加
-      await t.mutation(toggleLike, { postId }, {
+      await t.mutation(api.posts.toggleLike, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
       // 再度いいねを押して削除
-      await t.mutation(toggleLike, { postId }, {
+      await t.mutation(api.posts.toggleLike, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -244,7 +237,7 @@ describe("Posts関数", () => {
 
     it("認証されていないユーザーの場合エラーを発生させる", async () => {
       await expect(
-        t.mutation(toggleLike, { postId }, {
+        t.mutation(api.posts.toggleLike, { postId }, {
           auth: { getUserId: () => null }
         })
       ).rejects.toThrow("User must be authenticated to like posts");
@@ -253,15 +246,15 @@ describe("Posts関数", () => {
     it("複数のユーザーがいいねできる", async () => {
       const otherUserId = "other_user_id";
 
-      await t.mutation(toggleLike, { postId }, {
+      await t.mutation(api.posts.toggleLike, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      await t.mutation(toggleLike, { postId }, {
+      await t.mutation(api.posts.toggleLike, { postId }, {
         auth: { getUserId: () => otherUserId }
       });
 
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -279,7 +272,7 @@ describe("Posts関数", () => {
         }
       };
 
-      postId = await t.mutation(createPost, {
+      postId = await t.mutation(api.posts.createPost, {
         imageUrls: ["https://example.com/image.jpg"],
         caption: "Test post",
         tags: ["test"]
@@ -290,11 +283,11 @@ describe("Posts関数", () => {
     });
 
     it("投稿を保存する", async () => {
-      await t.mutation(toggleSave, { postId }, {
+      await t.mutation(api.posts.toggleSave, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -303,16 +296,16 @@ describe("Posts関数", () => {
 
     it("保存を解除する", async () => {
       // 最初に保存
-      await t.mutation(toggleSave, { postId }, {
+      await t.mutation(api.posts.toggleSave, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
       // 再度押して保存解除
-      await t.mutation(toggleSave, { postId }, {
+      await t.mutation(api.posts.toggleSave, { postId }, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
-      const posts = await t.query(getAllPosts, {}, {
+      const posts = await t.query(api.posts.getAllPosts, {}, {
         auth: { getUserId: () => mockAuthUserId }
       });
 
@@ -321,7 +314,7 @@ describe("Posts関数", () => {
 
     it("認証されていないユーザーの場合エラーを発生させる", async () => {
       await expect(
-        t.mutation(toggleSave, { postId }, {
+        t.mutation(api.posts.toggleSave, { postId }, {
           auth: { getUserId: () => null }
         })
       ).rejects.toThrow("User must be authenticated to save posts");
@@ -334,7 +327,7 @@ describe("Posts関数", () => {
         generateUploadUrl: vi.fn().mockResolvedValue("https://upload.example.com/test")
       };
 
-      const result = await t.mutation(generateUploadUrl, {}, {
+      const result = await t.mutation(api.posts.generateUploadUrl, {}, {
         auth: { getUserId: () => mockAuthUserId },
         storage: mockStorage
       });
@@ -345,7 +338,7 @@ describe("Posts関数", () => {
 
     it("認証されていないユーザーの場合エラーを発生させる", async () => {
       await expect(
-        t.mutation(generateUploadUrl, {}, {
+        t.mutation(api.posts.generateUploadUrl, {}, {
           auth: { getUserId: () => null }
         })
       ).rejects.toThrow("User must be authenticated to upload files");
@@ -359,7 +352,7 @@ describe("Posts関数", () => {
       };
 
       const storageId = "test_storage_id";
-      const result = await t.query(getFileUrl, { storageId }, {
+      const result = await t.query(api.posts.getFileUrl, { storageId }, {
         storage: mockStorage
       });
 
