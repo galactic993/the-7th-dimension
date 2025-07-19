@@ -17,7 +17,7 @@ const ConvexImage: React.FC<ConvexImageProps> = ({
   fallback = '/api/placeholder/400/400' 
 }) => {
   // Check if storageId is a valid Convex storage ID
-  const isConvexStorageId = storageId.startsWith('k');
+  const isConvexStorageId = storageId && storageId.startsWith('k');
   
   const imageUrl = useQuery(
     api.posts.getFileUrl, 

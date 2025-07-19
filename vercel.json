@@ -1,6 +1,19 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run build",
+  "buildCommand": "export CONVEX_DEPLOY_KEY=$(echo \"$CONVEX_DEPLOY_KEY\" | sed 's/%7C/|/g') && npx convex deploy --cmd 'npm run build'",
   "devCommand": "npm run dev",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://the-7th-dimension.com/$1",
+      "permanent": true,
+      "has": [
+        {
+          "type": "host",
+          "value": "the-7th-dimension.vercel.app"
+        }
+      ]
+    }
+  ]
 }

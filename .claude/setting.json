@@ -1,0 +1,46 @@
+{
+    "hooks": {
+    "PreToolUse": [
+        {
+            "matcher": "Write|Edit",
+            "hooks": [{
+                "type": "command",
+                "command": "jq -r 'if .tool_input.file_path | test(\"production|.env|secrets\") then {\"decision\": \"block\", \"reason\": \"本番環境のファイルは触るな！開発環境でテストしてから。\"} else empty end'"
+            }]
+        },
+        {
+            "matcher": "Bash",
+            "hooks": [{
+              "type": "command",
+              "command": "jq -r 'if .tool_input.command | test(\"rm -rf|dd if=|:(){ :|:& };:\") then {\"decision\": \"block\", \"reason\": \"危険なコマンドは実行できません。別の方法を検討してください。\"} else empty end'"
+            }]
+        }
+    ],
+    "PostToolUse": [
+        {
+            "matcher": "Bash",
+            "hooks": [{
+                "type": "command",
+                "command": "echo \"[$(date)] $USER: $(jq -r '.tool_input.command')\" >> ~/.claude/command_history.log"
+            }]
+        },{
+            "matcher": "Write|Edit|MultiEdit",
+            "hooks": [{
+                "type": "command",
+                "command": "jq -r '.tool_input.file_path | select(endswith(\".js\") or endswith(\".ts\") or endswith(\".jsx\") or endswith(\".tsx\"))' | xargs -r prettier --write"
+            }]
+        }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"🤖 Claude Code: タスクが完了しました。\"}' \"$SLACK_WEBHOOK_URL\""
+          }
+        ]
+      }
+    ]
+  }
+}
