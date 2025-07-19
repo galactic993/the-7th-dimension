@@ -132,7 +132,7 @@ function MainApp() {
           {/* Desktop Header */}
           <div className="hidden sm:flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">
-              あなたはどんなことを感じましたか？🌟
+              🌟
             </h2>
             <div className="flex items-center gap-4">
               <button
@@ -158,7 +158,7 @@ function MainApp() {
           {/* Mobile Header */}
           <div className="flex sm:hidden flex-col space-y-3 mb-4">
             <h2 className="text-lg font-bold text-gray-900 text-center">
-              あなたはどんなことを感じましたか？🌟
+              🌟
             </h2>
             <div className="flex flex-col space-y-2">
               <button
