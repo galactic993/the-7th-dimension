@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "npx convex deploy -y --cmd 'npm run build'",
+  "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "outputDirectory": "dist",
   "redirects": [
