@@ -74,15 +74,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     debouncedProfileUsername ? { username: debouncedProfileUsername } : "skip"
   );
 
-  // デバッグ: クエリの状態をログ出力
-  useEffect(() => {
-    console.log('Query state changed:', {
-      isOpen,
-      isSignedIn,
-      isLoaded,
-      checkIsFirstPostQuery
-    });
-  }, [isOpen, isSignedIn, isLoaded, checkIsFirstPostQuery]);
+  // Note: Query state logging removed to prevent unnecessary re-renders
 
   useEffect(() => {
     if (!isOpen) {
@@ -98,20 +90,28 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     }
   }, [isOpen]);
 
-  // Username validation with debounced value
-  useEffect(() => {
+  // Username validation with debounced value - memoized to prevent re-renders
+  const validationError = useMemo(() => {
+    if (profileUsername.length === 0) {
+      return '';
+    }
+    if (profileUsername.length > 0 && profileUsername.length < 3) {
+      return 'ユーザー名は3文字以上で入力してください';
+    }
     if (debouncedProfileUsername && debouncedProfileUsername === profileUsername) {
       if (checkUsername === false) {
-        setUsernameError('このユーザー名は既に使用されています');
-      } else if (checkUsername === true) {
-        setUsernameError('');
+        return 'このユーザー名は既に使用されています';
       }
-    } else if (profileUsername.length > 0 && profileUsername.length < 3) {
-      setUsernameError('ユーザー名は3文字以上で入力してください');
-    } else if (profileUsername.length === 0) {
-      setUsernameError('');
     }
+    return '';
   }, [profileUsername, debouncedProfileUsername, checkUsername]);
+
+  // Update usernameError only when validation result actually changes
+  useEffect(() => {
+    if (usernameError !== validationError) {
+      setUsernameError(validationError);
+    }
+  }, [validationError, usernameError]);
 
   // ログイン状態が変化した時の処理
   useEffect(() => {
@@ -130,13 +130,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     onClose();
   };
 
-  // フォーム有効性をメモ化
+  // フォーム有効性をメモ化 - validationErrorを使用してvalidation結果統一
   const isProfileFormValid = useMemo(() => {
     if (profileUsername.length < 3) return false;
-    if (checkUsername === false) return false;
+    if (validationError) return false;
     if (!profileUsername.trim()) return false;
     return true;
-  }, [profileUsername, checkUsername]);
+  }, [profileUsername, validationError]);
 
   const handleUsernameChange = useCallback((value: string) => {
     // Allow only alphanumeric characters and underscores
@@ -204,6 +204,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       console.error('プロファイル作成エラー:', error);
       if (error instanceof Error) {
         if (error.message.includes('already taken')) {
+          // Note: This will trigger validationError recalculation, but it's intentional
           setUsernameError('このユーザー名は既に使用されています');
         } else {
           alert(`プロファイル作成に失敗しました: ${error.message}`);
@@ -318,35 +319,24 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   };
 
   const continueSubmission = async () => {
-    // デバッグログを追加
-    console.log('continueSubmission called');
-    console.log('checkIsFirstPostQuery:', checkIsFirstPostQuery);
-    console.log('isSignedIn:', isSignedIn);
-    console.log('isLoaded:', isLoaded);
-
     // 認証エラーの場合は初回投稿として扱う
     if (!isSignedIn || !isLoaded) {
-      console.log('User not properly authenticated, showing profile setup');
       setShowProfileSetup(true);
       return;
     }
 
     // 初回投稿かチェック（queryの結果を使用）
     if (checkIsFirstPostQuery === true) {
-      console.log('First post detected, showing profile setup');
       setShowProfileSetup(true);
       return;
     } else if (checkIsFirstPostQuery === undefined) {
       // まだクエリが完了していない場合は初回投稿として扱う
-      console.log('Query still loading, treating as first post');
       setShowProfileSetup(true);
       return;
     } else if (checkIsFirstPostQuery === false) {
-      console.log('Not first post, proceeding with post creation');
       // 投稿を実行
       executePostCreation();
     } else {
-      console.log('Unexpected query result, treating as first post');
       setShowProfileSetup(true);
     }
   };
@@ -355,20 +345,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setIsUploading(true);
     
     try {
-      console.log('投稿作成を開始します...');
-      console.log('選択されたファイル:', files);
-      
       // Upload all files to Convex Storage
       const imageUrls: string[] = [];
       let audioUrl: string | undefined;
       let videoUrl: string | undefined;
 
-      for (const filePreview of files) {
-        console.log('ファイルをアップロード中:', filePreview.file.name);
-        
+      for (const filePreview of files) {        
         try {
           const storageId = await uploadFileToConvex(filePreview.file);
-          console.log('アップロード成功:', storageId);
           
           if (filePreview.type === 'image') {
             imageUrls.push(storageId);
@@ -378,20 +362,13 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
             audioUrl = storageId;
           }
         } catch (fileError) {
-          console.error('ファイルアップロードエラー:', fileError);
           const errorMessage = fileError instanceof Error ? fileError.message : 'unknown error';
           throw new Error(`ファイル ${filePreview.file.name} のアップロードに失敗しました: ${errorMessage}`);
         }
       }
 
-      console.log('すべてのファイルアップロード完了');
-      console.log('imageUrls:', imageUrls);
-      console.log('audioUrl:', audioUrl);
-      console.log('videoUrl:', videoUrl);
-
       // Create the post
-      console.log('投稿を作成中...');
-      const postId = await createPost({
+      await createPost({
         imageUrls,
         audioUrl,
         videoUrl,
@@ -399,8 +376,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         tags,
         location: undefined,
       });
-
-      console.log('投稿作成成功:', postId);
 
       // Reset form
       setCaption('');
@@ -414,7 +389,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       onPostCreated();
       handleCloseAll();
     } catch (error) {
-      console.error('投稿作成エラー:', error);
       
       // より詳細なエラーメッセージを表示
       let errorMessage = '投稿の作成に失敗しました。';
@@ -437,9 +411,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
-  // プロファイル設定モーダルコンポーネント
-  const ProfileSetupModal = () => {
-    const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
+  // プロファイル設定モーダルコンポーネント - メモ化してre-renderを防ぐ
+  const ProfileSetupModal = useMemo(() => {
+    const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar] || AVATAR_OPTIONS[0];
     const AvatarIcon = selectedAvatarOption.icon;
 
     return (
@@ -492,7 +466,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
                   const IconComponent = option.icon;
                   return (
                     <button
-                      key={index}
+                      key={`avatar-${index}-${option.name}`}
                       onClick={() => {
                         setSelectedAvatar(index);
                         setAvatarFile(null);
@@ -540,17 +514,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">ユーザー名 *</label>
               <input
+                key="profile-username-input"
                 type="text"
                 value={profileUsername}
                 onChange={(e) => handleUsernameChange(e.target.value)}
                 placeholder="username"
                 className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  usernameError ? 'border-red-500' : 'border-gray-300'
+                  validationError ? 'border-red-500' : 'border-gray-300'
                 }`}
                 maxLength={20}
+                autoComplete="off"
               />
-              {usernameError && (
-                <p className="text-sm text-red-600">{usernameError}</p>
+              {validationError && (
+                <p className="text-sm text-red-600">{validationError}</p>
               )}
               <p className="text-xs text-gray-500">
                 3文字以上、英数字とアンダースコアのみ使用可能
@@ -571,7 +547,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         </div>
       </div>
     );
-  };
+  }, [profileUsername, selectedAvatar, avatarFile, avatarPreview, validationError, isCreatingProfile, handleUsernameChange, handleProfileSubmit, handleCloseAll]);
 
   // ログインプロンプトコンポーネント
   const LoginPrompt = () => (
@@ -614,7 +590,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     <>
       {showLoginPrompt && <LoginPrompt />}
       
-      {showProfileSetup && <ProfileSetupModal />}
+      {showProfileSetup && ProfileSetupModal}
       
       {isOpen && !showLoginPrompt && !showProfileSetup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
