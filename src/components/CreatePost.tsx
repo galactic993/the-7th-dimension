@@ -36,116 +36,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
   const checkIsFirstPostQuery = useQuery(api.userProfiles.checkIsFirstPost);
 
-  // デバッグ: クエリの状態をログ出力
-  useEffect(() => {
-    console.log('Query state changed:', {
-      isOpen,
-      isSignedIn,
-      isLoaded,
-      checkIsFirstPostQuery
-    });
-  }, [isOpen, isSignedIn, isLoaded, checkIsFirstPostQuery]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setShowProfileSetup(false);
-      setShowLoginPrompt(false);
-      setPendingSubmit(false);
-    }
-  }, [isOpen]);
-
-
-  // ログイン状態が変化した時の処理
-  useEffect(() => {
-    if (isSignedIn && pendingSubmit) {
-      setPendingSubmit(false);
-      setShowLoginPrompt(false);
-      // ログイン後、投稿処理を続行
-      continueSubmission();
-    }
-  }, [isSignedIn, pendingSubmit]);
-
-
-  const handleCloseAll = () => {
-    setShowProfileSetup(false);
-    setShowLoginPrompt(false);
-    onClose();
-  };
-
-
-
-
-  const handleProfileCreated = () => {
-    setShowProfileSetup(false);
-    executePostCreation();
-  };
-
-
-  const extractHashtags = (text: string): string[] => {
-    const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
-    const matches = text.match(hashtagRegex);
-    return matches ? matches.map(tag => tag.slice(1)) : [];
-  };
-
-  const handleCaptionChange = (text: string) => {
-    setCaption(text);
-    const extractedTags = extractHashtags(text);
-    setTags(extractedTags);
-  };
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
-    const selectedFiles = Array.from(event.target.files || []);
-    const validFiles: FilePreview[] = [];
-    
-    for (const file of selectedFiles) {
-      // Limit to 9 total files
-      if (files.length + validFiles.length >= 9) {
-        alert('最大9個のファイルまでアップロード可能です');
-        break;
-      }
-
-      // Validate file types
-      if (type === 'image' && !file.type.startsWith('image/')) {
-        alert('画像ファイルを選択してください');
-        continue;
-      }
-      if (type === 'video' && !file.type.startsWith('video/')) {
-        alert('動画ファイルを選択してください');
-        continue;
-      }
-      if (type === 'audio' && !file.type.startsWith('audio/')) {
-        alert('音声ファイルを選択してください');
-        continue;
-      }
-
-      // Check file size (1GB limit)
-      if (file.size > 1024 * 1024 * 1024) {
-        alert('ファイルサイズは1GB以下にしてください');
-        continue;
-      }
-
-      const url = URL.createObjectURL(file);
-      validFiles.push({ file, url, type });
-    }
-    
-    // Add all valid files at once
-    if (validFiles.length > 0) {
-      setFiles(prev => [...prev, ...validFiles]);
-    }
-    
-    // Reset input
-    event.target.value = '';
-  };
-
-  const removeFile = (index: number) => {
-    setFiles(prev => {
-      const newFiles = [...prev];
-      URL.revokeObjectURL(newFiles[index].url);
-      newFiles.splice(index, 1);
-      return newFiles;
-    });
-  };
-
   const uploadFileToConvex = async (file: File): Promise<string> => {
     const uploadUrl = await generateUploadUrl();
     
@@ -161,60 +51,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
 
     const { storageId } = await response.json();
     return storageId;
-  };
-
-  const handleSubmit = async () => {
-    if (!caption.trim() && files.length === 0) {
-      alert('テキストまたはファイルを追加してください');
-      return;
-    }
-
-    // ログイン状態をチェック
-    if (!isLoaded) {
-      return; // まだ読み込み中
-    }
-
-    if (!isSignedIn) {
-      setPendingSubmit(true);
-      setShowLoginPrompt(true);
-      return;
-    }
-
-    continueSubmission();
-  };
-
-  const continueSubmission = async () => {
-    // デバッグログを追加
-    console.log('continueSubmission called');
-    console.log('checkIsFirstPostQuery:', checkIsFirstPostQuery);
-    console.log('isSignedIn:', isSignedIn);
-    console.log('isLoaded:', isLoaded);
-
-    // 認証エラーの場合は初回投稿として扱う
-    if (!isSignedIn || !isLoaded) {
-      console.log('User not properly authenticated, showing profile setup');
-      setShowProfileSetup(true);
-      return;
-    }
-
-    // 初回投稿かチェック（queryの結果を使用）
-    if (checkIsFirstPostQuery === true) {
-      console.log('First post detected, showing profile setup');
-      setShowProfileSetup(true);
-      return;
-    } else if (checkIsFirstPostQuery === undefined) {
-      // まだクエリが完了していない場合は初回投稿として扱う
-      console.log('Query still loading, treating as first post');
-      setShowProfileSetup(true);
-      return;
-    } else if (checkIsFirstPostQuery === false) {
-      console.log('Not first post, proceeding with post creation');
-      // 投稿を実行
-      executePostCreation();
-    } else {
-      console.log('Unexpected query result, treating as first post');
-      setShowProfileSetup(true);
-    }
   };
 
   const executePostCreation = async () => {
@@ -297,6 +133,165 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const continueSubmission = async () => {
+    // デバッグログを追加
+    console.log('continueSubmission called');
+    console.log('checkIsFirstPostQuery:', checkIsFirstPostQuery);
+    console.log('isSignedIn:', isSignedIn);
+    console.log('isLoaded:', isLoaded);
+
+    // 認証エラーの場合は初回投稿として扱う
+    if (!isSignedIn || !isLoaded) {
+      console.log('User not properly authenticated, showing profile setup');
+      setShowProfileSetup(true);
+      return;
+    }
+
+    // 初回投稿かチェック（queryの結果を使用）
+    if (checkIsFirstPostQuery === true) {
+      console.log('First post detected, showing profile setup');
+      setShowProfileSetup(true);
+      return;
+    } else if (checkIsFirstPostQuery === undefined) {
+      // まだクエリが完了していない場合は初回投稿として扱う
+      console.log('Query still loading, treating as first post');
+      setShowProfileSetup(true);
+      return;
+    } else if (checkIsFirstPostQuery === false) {
+      console.log('Not first post, proceeding with post creation');
+      // 投稿を実行
+      executePostCreation();
+    } else {
+      console.log('Unexpected query result, treating as first post');
+      setShowProfileSetup(true);
+    }
+  };
+
+  const handleCloseAll = () => {
+    setShowProfileSetup(false);
+    setShowLoginPrompt(false);
+    onClose();
+  };
+
+  const handleProfileCreated = () => {
+    setShowProfileSetup(false);
+    executePostCreation();
+  };
+
+  // デバッグ: クエリの状態をログ出力
+  useEffect(() => {
+    console.log('Query state changed:', {
+      isOpen,
+      isSignedIn,
+      isLoaded,
+      checkIsFirstPostQuery
+    });
+  }, [isOpen, isSignedIn, isLoaded, checkIsFirstPostQuery]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowProfileSetup(false);
+      setShowLoginPrompt(false);
+      setPendingSubmit(false);
+    }
+  }, [isOpen]);
+
+  // ログイン状態が変化した時の処理
+  useEffect(() => {
+    if (isSignedIn && pendingSubmit) {
+      setPendingSubmit(false);
+      setShowLoginPrompt(false);
+      // ログイン後、投稿処理を続行
+      continueSubmission();
+    }
+  }, [isSignedIn, pendingSubmit]);
+
+
+  const extractHashtags = (text: string): string[] => {
+    const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
+    const matches = text.match(hashtagRegex);
+    return matches ? matches.map(tag => tag.slice(1)) : [];
+  };
+
+  const handleCaptionChange = (text: string) => {
+    setCaption(text);
+    const extractedTags = extractHashtags(text);
+    setTags(extractedTags);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
+    const selectedFiles = Array.from(event.target.files || []);
+    const validFiles: FilePreview[] = [];
+    
+    for (const file of selectedFiles) {
+      // Limit to 9 total files
+      if (files.length + validFiles.length >= 9) {
+        alert('最大9個のファイルまでアップロード可能です');
+        break;
+      }
+
+      // Validate file types
+      if (type === 'image' && !file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください');
+        continue;
+      }
+      if (type === 'video' && !file.type.startsWith('video/')) {
+        alert('動画ファイルを選択してください');
+        continue;
+      }
+      if (type === 'audio' && !file.type.startsWith('audio/')) {
+        alert('音声ファイルを選択してください');
+        continue;
+      }
+
+      // Check file size (1GB limit)
+      if (file.size > 1024 * 1024 * 1024) {
+        alert('ファイルサイズは1GB以下にしてください');
+        continue;
+      }
+
+      const url = URL.createObjectURL(file);
+      validFiles.push({ file, url, type });
+    }
+    
+    // Add all valid files at once
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+    }
+    
+    // Reset input
+    event.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].url);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!caption.trim() && files.length === 0) {
+      alert('テキストまたはファイルを追加してください');
+      return;
+    }
+
+    // ログイン状態をチェック
+    if (!isLoaded) {
+      return; // まだ読み込み中
+    }
+
+    if (!isSignedIn) {
+      setPendingSubmit(true);
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    continueSubmission();
   };
 
   const removeTag = (tagToRemove: string) => {
