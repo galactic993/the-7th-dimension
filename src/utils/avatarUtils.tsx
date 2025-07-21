@@ -1,12 +1,13 @@
 import React from 'react';
 import { User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
+import ConvexImage from '../components/ConvexImage';
 
 export interface AvatarData {
   icon: string;
   color: string;
 }
 
-const ICON_MAP = {
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
   'ユーザー': User,
   'スパークル': Sparkles,
   'ハート': Heart,
@@ -26,13 +27,15 @@ export const parseAvatarString = (avatarString: string): AvatarData | null => {
 export const renderAvatar = (avatarString: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   const avatarData = parseAvatarString(avatarString);
   
+  // If avatarString is a storageId (doesn't parse as JSON)
   if (!avatarData) {
-    // Fallback to default image
+    // This is likely a Convex storageId or image URL
     return (
-      <img 
-        src="/images/default.png" 
-        alt="Default avatar"
+      <ConvexImage
+        storageId={avatarString}
+        alt="User avatar"
         className={`rounded-full object-cover ${getSizeClasses(size)}`}
+        fallback="/images/default.png"
       />
     );
   }
