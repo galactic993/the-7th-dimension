@@ -100,7 +100,7 @@ export const getAllPosts = query({
             isVerified: post.isVerified,
           },
           imageUrl: post.imageUrls[0] || "", // Primary image for grid display
-          imageUrls: post.imageUrls,
+          images: post.imageUrls.length > 0 ? post.imageUrls : undefined, // 複数画像サポート
           audioUrl: post.audioUrl,
           videoUrl: post.videoUrl,
           caption: post.caption,

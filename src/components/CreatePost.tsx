@@ -3,7 +3,6 @@ import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
 import { api } from '../../convex/_generated/api';
-import ProfileSetup from './ProfileSetup';
 
 interface CreatePostProps {
   isOpen: boolean;
@@ -63,11 +62,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     }
   }, [isSignedIn, pendingSubmit]);
 
-  const handleProfileCreated = () => {
-    setShowProfileSetup(false);
-    // プロファイル作成後、投稿を実行
-    executePostCreation();
-  };
 
   const handleCloseAll = () => {
     setShowProfileSetup(false);
@@ -90,37 +84,43 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
     const selectedFiles = Array.from(event.target.files || []);
+    const validFiles: FilePreview[] = [];
     
-    selectedFiles.forEach(file => {
+    for (const file of selectedFiles) {
       // Limit to 9 total files
-      if (files.length >= 9) {
+      if (files.length + validFiles.length >= 9) {
         alert('最大9個のファイルまでアップロード可能です');
-        return;
+        break;
       }
 
       // Validate file types
       if (type === 'image' && !file.type.startsWith('image/')) {
         alert('画像ファイルを選択してください');
-        return;
+        continue;
       }
       if (type === 'video' && !file.type.startsWith('video/')) {
         alert('動画ファイルを選択してください');
-        return;
+        continue;
       }
       if (type === 'audio' && !file.type.startsWith('audio/')) {
         alert('音声ファイルを選択してください');
-        return;
+        continue;
       }
 
       // Check file size (1GB limit)
       if (file.size > 1024 * 1024 * 1024) {
         alert('ファイルサイズは1GB以下にしてください');
-        return;
+        continue;
       }
 
       const url = URL.createObjectURL(file);
-      setFiles(prev => [...prev, { file, url, type }]);
-    });
+      validFiles.push({ file, url, type });
+    }
+    
+    // Add all valid files at once
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+    }
     
     // Reset input
     event.target.value = '';
@@ -333,11 +333,25 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     <>
       {showLoginPrompt && <LoginPrompt />}
       
-      <ProfileSetup
-        isOpen={showProfileSetup}
-        onClose={handleCloseAll}
-        onProfileCreated={handleProfileCreated}
-      />
+      {showProfileSetup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">プロファイル設定</h2>
+              <p className="text-gray-600 mb-6">初回投稿が検出されました。プロファイル設定機能は現在調整中です。</p>
+              <button
+                onClick={() => {
+                  setShowProfileSetup(false);
+                  executePostCreation();
+                }}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                スキップして投稿
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {isOpen && !showLoginPrompt && !showProfileSetup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

@@ -49,7 +49,7 @@ export const useConvexPosts = (): UseConvexPostsResult => {
           isVerified: true,
         },
         imageUrl: post.media_url,
-        imageUrls: [post.media_url],
+        images: [post.media_url],
         audioUrl: undefined,
         videoUrl: post.media_type === 'VIDEO' ? post.media_url : undefined,
         caption: post.caption || '',
