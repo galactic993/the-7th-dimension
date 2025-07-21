@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
+import { useUser, SignIn } from '@clerk/clerk-react';
 import { api } from '../../convex/_generated/api';
 import ProfileSetup from './ProfileSetup';
 
@@ -22,40 +23,52 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const [isUploading, setIsUploading] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
   
+  const { isSignedIn, isLoaded } = useUser();
   const createPost = useMutation(api.posts.createPost);
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
-  const isFirstPost = useQuery(api.userProfiles.checkIsFirstPost);
+  const checkIsFirstPost = useMutation(api.userProfiles.checkIsFirstPost);
 
   useEffect(() => {
-    if (isOpen) {
-      if (isFirstPost === true) {
-        setShowProfileSetup(true);
-        setShowCreatePost(false);
-      } else if (isFirstPost === false) {
-        setShowProfileSetup(false);
-        setShowCreatePost(true);
-      }
-    } else {
+    if (!isOpen) {
       setShowProfileSetup(false);
-      setShowCreatePost(false);
+      setShowLoginPrompt(false);
+      setPendingSubmit(false);
     }
-  }, [isOpen, isFirstPost]);
+  }, [isOpen]);
+
+  // ログイン状態が変化した時の処理
+  useEffect(() => {
+    if (isSignedIn && pendingSubmit) {
+      setPendingSubmit(false);
+      setShowLoginPrompt(false);
+      // ログイン後、投稿処理を続行
+      continueSubmission();
+    }
+  }, [isSignedIn, pendingSubmit]);
 
   const handleProfileCreated = () => {
     setShowProfileSetup(false);
-    setShowCreatePost(true);
+    // プロファイル作成後、投稿を実行
+    executePostCreation();
   };
 
   const handleCloseAll = () => {
     setShowProfileSetup(false);
-    setShowCreatePost(false);
+    setShowLoginPrompt(false);
     onClose();
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginPrompt(false);
+    // ログイン後、投稿処理を続行
+    handleSubmit();
   };
 
   const extractHashtags = (text: string): string[] => {
@@ -140,6 +153,37 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       return;
     }
 
+    // ログイン状態をチェック
+    if (!isLoaded) {
+      return; // まだ読み込み中
+    }
+
+    if (!isSignedIn) {
+      setPendingSubmit(true);
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    continueSubmission();
+  };
+
+  const continueSubmission = async () => {
+    // 初回投稿かチェック
+    try {
+      const isFirst = await checkIsFirstPost();
+      if (isFirst) {
+        setShowProfileSetup(true);
+        return;
+      }
+    } catch (error) {
+      console.error('初回投稿チェックエラー:', error);
+    }
+
+    // 投稿を実行
+    executePostCreation();
+  };
+
+  const executePostCreation = async () => {
     setIsUploading(true);
     
     try {
@@ -225,15 +269,54 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
+  // ログインプロンプトコンポーネント
+  const LoginPrompt = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">ログインが必要です</h2>
+          <button
+            onClick={handleCloseAll}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="text-center mb-6">
+          <p className="text-gray-600">投稿するにはログインしてください</p>
+        </div>
+        
+        <div className="flex justify-center">
+          <SignIn 
+            routing="hash"
+            appearance={{
+              elements: {
+                formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",
+                card: "shadow-none border-0",
+                footerActionLink: { display: "none" },
+                footerAction: { display: "none" },
+                footerActionText: { display: "none" },
+                footer: { display: "none" },
+              },
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
+      {showLoginPrompt && <LoginPrompt />}
+      
       <ProfileSetup
         isOpen={showProfileSetup}
         onClose={handleCloseAll}
         onProfileCreated={handleProfileCreated}
       />
       
-      {showCreatePost && (
+      {isOpen && !showLoginPrompt && !showProfileSetup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
