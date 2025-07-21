@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Heart, MessageCircle, Bookmark, MapPin, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Post } from '../types';
 import ConvexImage from './ConvexImage';
+import { renderAvatar } from '../utils/avatarUtils';
 
 interface PostModalProps {
   post: Post;
@@ -93,11 +94,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
-                <img
-                  src={post.user.avatar}
-                  alt={post.user.displayName}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                {renderAvatar(post.user.avatar, 'md')}
                 <div>
                   <div className="flex items-center space-x-1">
                     <span className="font-semibold text-gray-900">{post.user.username}</span>

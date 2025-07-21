@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Post } from '../types';
 import ConvexImage from './ConvexImage';
+import { renderAvatar } from '../utils/avatarUtils';
 
 interface InstagramStylePostProps {
   post: Post;
@@ -52,11 +53,7 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-3">
-          <img
-            src={post.user.avatar}
-            alt={post.user.displayName}
-            className="w-8 h-8 rounded-full object-cover"
-          />
+          {renderAvatar(post.user.avatar, 'sm')}
           <div className="flex items-center space-x-1">
             <span className="font-semibold text-sm text-gray-900">
               {post.user.username}

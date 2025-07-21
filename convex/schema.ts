@@ -67,4 +67,16 @@ export default defineSchema({
     userId: v.string(),
   }).index("by_post_user", ["postId", "userId"])
     .index("by_user", ["userId"]),
+
+  userProfiles: defineTable({
+    userId: v.string(),
+    username: v.string(),
+    displayName: v.string(),
+    avatar: v.string(),
+    bio: v.optional(v.string()),
+    isVerified: v.boolean(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  }).index("by_user", ["userId"])
+    .index("by_username", ["username"]),
 }); 

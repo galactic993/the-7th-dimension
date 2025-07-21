@@ -17,6 +17,7 @@ import type * as crons from "../crons.js";
 import type * as instagram from "../instagram.js";
 import type * as instagramPosts from "../instagramPosts.js";
 import type * as posts from "../posts.js";
+import type * as userProfiles from "../userProfiles.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   instagram: typeof instagram;
   instagramPosts: typeof instagramPosts;
   posts: typeof posts;
+  userProfiles: typeof userProfiles;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

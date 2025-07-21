@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import ProfileSetup from './ProfileSetup';
 
 interface CreatePostProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -27,6 +30,33 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   
   const createPost = useMutation(api.posts.createPost);
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
+  const isFirstPost = useQuery(api.userProfiles.checkIsFirstPost);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (isFirstPost === true) {
+        setShowProfileSetup(true);
+        setShowCreatePost(false);
+      } else if (isFirstPost === false) {
+        setShowProfileSetup(false);
+        setShowCreatePost(true);
+      }
+    } else {
+      setShowProfileSetup(false);
+      setShowCreatePost(false);
+    }
+  }, [isOpen, isFirstPost]);
+
+  const handleProfileCreated = () => {
+    setShowProfileSetup(false);
+    setShowCreatePost(true);
+  };
+
+  const handleCloseAll = () => {
+    setShowProfileSetup(false);
+    setShowCreatePost(false);
+    onClose();
+  };
 
   const extractHashtags = (text: string): string[] => {
     const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
@@ -170,7 +200,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       
       alert('投稿が正常に作成されました！');
       onPostCreated();
-      onClose();
+      handleCloseAll();
     } catch (error) {
       console.error('投稿作成エラー:', error);
       
@@ -195,22 +225,28 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">新しい投稿を作成</h2>
-          <button
-            onClick={onClose}
-            disabled={isUploading}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <>
+      <ProfileSetup
+        isOpen={showProfileSetup}
+        onClose={handleCloseAll}
+        onProfileCreated={handleProfileCreated}
+      />
+      
+      {showCreatePost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-semibold text-gray-900">新しい投稿を作成</h2>
+              <button
+                onClick={handleCloseAll}
+                disabled={isUploading}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
@@ -305,7 +341,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
             <textarea
               value={caption}
               onChange={(e) => handleCaptionChange(e.target.value)}
-              placeholder="あなたの体験をシェアしてください... #ハッシュタグを使ってみましょう"
+              placeholder="あなたの体験をシェアしてください..."
               className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -341,7 +377,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         <div className="px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
           <div className="flex justify-end gap-3">
             <button
-              onClick={onClose}
+              onClick={handleCloseAll}
               disabled={isUploading}
               className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
             >
@@ -359,6 +395,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         </div>
       </div>
     </div>
+      )}
+    </>
   );
 };
 

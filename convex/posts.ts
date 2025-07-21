@@ -17,17 +17,34 @@ export const createPost = mutation({
       throw new Error("User must be authenticated to create posts");
     }
 
-    // Get user info from Clerk integration
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      throw new Error("User identity not found");
+    // Get user profile or fallback to Clerk info
+    const userProfile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    let username, displayName, avatar;
+
+    if (userProfile) {
+      username = userProfile.username;
+      displayName = userProfile.displayName;
+      avatar = userProfile.avatar;
+    } else {
+      // Fallback to Clerk integration
+      const user = await ctx.auth.getUserIdentity();
+      if (!user) {
+        throw new Error("User identity not found");
+      }
+      username = user.nickname || user.email?.split('@')[0] || "user";
+      displayName = user.name || user.nickname || "Unknown User";
+      avatar = user.pictureUrl || "/api/placeholder/40/40";
     }
 
     const postId = await ctx.db.insert("posts", {
       userId: userId,
-      username: user.nickname || user.email?.split('@')[0] || "user",
-      displayName: user.name || user.nickname || "Unknown User",
-      avatar: user.pictureUrl || "/api/placeholder/40/40",
+      username,
+      displayName,
+      avatar,
       imageUrls: args.imageUrls,
       audioUrl: args.audioUrl,
       videoUrl: args.videoUrl,
