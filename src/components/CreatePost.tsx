@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { X, Image, Video, Mic, Hash, Upload, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
@@ -55,8 +55,23 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
   const checkIsFirstPostQuery = useQuery(api.userProfiles.checkIsFirstPost);
   const createProfile = useMutation(api.userProfiles.createUserProfile);
+  // デバウンス処理でAPIクエリを制御
+  const [debouncedProfileUsername, setDebouncedProfileUsername] = useState('');
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (profileUsername.length >= 3) {
+        setDebouncedProfileUsername(profileUsername);
+      } else {
+        setDebouncedProfileUsername('');
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [profileUsername]);
+
   const checkUsername = useQuery(api.userProfiles.checkUsernameAvailability, 
-    profileUsername.length >= 3 ? { username: profileUsername } : "skip"
+    debouncedProfileUsername ? { username: debouncedProfileUsername } : "skip"
   );
 
   // デバッグ: クエリの状態をログ出力
@@ -83,18 +98,20 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     }
   }, [isOpen]);
 
-  // Username validation
+  // Username validation with debounced value
   useEffect(() => {
-    if (profileUsername.length >= 3 && checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-    } else if (profileUsername.length >= 3 && checkUsername === true) {
-      setUsernameError('');
+    if (debouncedProfileUsername && debouncedProfileUsername === profileUsername) {
+      if (checkUsername === false) {
+        setUsernameError('このユーザー名は既に使用されています');
+      } else if (checkUsername === true) {
+        setUsernameError('');
+      }
     } else if (profileUsername.length > 0 && profileUsername.length < 3) {
       setUsernameError('ユーザー名は3文字以上で入力してください');
-    } else {
+    } else if (profileUsername.length === 0) {
       setUsernameError('');
     }
-  }, [profileUsername, checkUsername]);
+  }, [profileUsername, debouncedProfileUsername, checkUsername]);
 
   // ログイン状態が変化した時の処理
   useEffect(() => {
@@ -113,23 +130,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     onClose();
   };
 
-  const validateProfileForm = () => {
-    if (profileUsername.length < 3) {
-      setUsernameError('ユーザー名は3文字以上で入力してください');
-      return false;
-    }
-    if (checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-      return false;
-    }
+  // フォーム有効性をメモ化
+  const isProfileFormValid = useMemo(() => {
+    if (profileUsername.length < 3) return false;
+    if (checkUsername === false) return false;
+    if (!profileUsername.trim()) return false;
     return true;
-  };
+  }, [profileUsername, checkUsername]);
 
-  const handleUsernameChange = (value: string) => {
+  const handleUsernameChange = useCallback((value: string) => {
     // Allow only alphanumeric characters and underscores
     const filtered = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     setProfileUsername(filtered);
-  };
+  }, []);
 
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -155,7 +168,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   };
 
   const handleProfileSubmit = async () => {
-    if (!validateProfileForm()) return;
+    if (!isProfileFormValid) return;
 
     setIsCreatingProfile(true);
     try {
@@ -431,7 +444,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full">
+        <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <h2 className="text-xl font-semibold text-gray-900">プロファイル設定</h2>
@@ -445,7 +458,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1">
 
             {/* Avatar Selection */}
             <div className="space-y-3">
@@ -549,7 +562,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
           <div className="px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
             <button
               onClick={handleProfileSubmit}
-              disabled={isCreatingProfile || !validateProfileForm()}
+              disabled={isCreatingProfile || !isProfileFormValid}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCreatingProfile ? 'プロファイル作成中...' : 'プロファイルを作成して投稿'}
