@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 
@@ -23,14 +23,27 @@ const AVATAR_OPTIONS = [
 
 const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileCreated }) => {
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameError, setUsernameError] = useState('');
+  const [customImage, setCustomImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createProfile = useMutation(api.userProfiles.createUserProfile);
-  const debouncedUsername = useMemo(() => {
-    return username.length >= 3 ? username : null;
+  // デバウンス処理でAPIクエリを制御
+  const [debouncedUsername, setDebouncedUsername] = useState('');
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (username.length >= 3) {
+        setDebouncedUsername(username);
+      } else {
+        setDebouncedUsername('');
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
   }, [username]);
 
   const checkUsername = useQuery(api.userProfiles.checkUsernameAvailability, 
@@ -38,16 +51,18 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
   );
 
   useEffect(() => {
-    if (username.length >= 3 && checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-    } else if (username.length >= 3 && checkUsername === true) {
-      setUsernameError('');
+    if (debouncedUsername && debouncedUsername === username) {
+      if (checkUsername === false) {
+        setUsernameError('このユーザー名は既に使用されています');
+      } else if (checkUsername === true) {
+        setUsernameError('');
+      }
     } else if (username.length > 0 && username.length < 3) {
       setUsernameError('ユーザー名は3文字以上で入力してください');
-    } else {
+    } else if (username.length === 0) {
       setUsernameError('');
     }
-  }, [username, checkUsername]);
+  }, [username, debouncedUsername, checkUsername]);
 
   const validateForm = () => {
     if (username.length < 3) {
@@ -58,7 +73,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
       setUsernameError('このユーザー名は既に使用されています');
       return false;
     }
-    if (!displayName.trim()) {
+    if (!username.trim()) {
       return false;
     }
     return true;
@@ -77,7 +92,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
 
       await createProfile({
         username: username.trim(),
-        displayName: displayName.trim(),
+        displayName: username.trim(), // ユーザー名を表示名として使用
         avatar: avatarString,
       });
 
@@ -103,14 +118,40 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
     setUsername(filtered);
   }, []);
 
+  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // ファイルサイズチェック (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('ファイルサイズは5MB以下にしてください');
+        return;
+      }
+      
+      // ファイルタイプチェック
+      if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+        alert('JPEGまたはPNG形式の画像を選択してください');
+        return;
+      }
+      
+      setCustomImage(file);
+      
+      // プレビュー用のURL作成
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
   const AvatarIcon = selectedAvatarOption.icon;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-md w-full my-auto max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">プロファイル設定</h2>
@@ -124,11 +165,46 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
 
           {/* Avatar Selection */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-gray-700">アイコンを選択</label>
+            
+            {/* カスタム画像アップロード */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center space-y-2 w-full"
+              >
+                <Upload className="w-8 h-8 text-gray-400" />
+                <div className="text-sm text-gray-600">
+                  <div className="font-medium">画像をアップロード</div>
+                  <div className="text-xs text-gray-500">5MB以下のJPG、PNG</div>
+                </div>
+              </button>
+            </div>
+            
+            {imagePreview && (
+              <div className="flex justify-center">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-blue-500"
+                />
+              </div>
+            )}
+            
+            <div className="text-center text-gray-500 text-sm">または</div>
+            
             <div className="grid grid-cols-3 gap-3">
               {AVATAR_OPTIONS.map((option, index) => {
                 const IconComponent = option.icon;
@@ -160,7 +236,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
               </div>
               <div className="text-left">
                 <div className="font-medium text-gray-900">
-                  {displayName || 'あなたの表示名'}
+                  {username || 'username'}
                 </div>
                 <div className="text-sm text-gray-500">
                   @{username || 'username'}
@@ -190,18 +266,6 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
             </p>
           </div>
 
-          {/* Display Name */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">表示名 *</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="あなたの表示名"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              maxLength={30}
-            />
-          </div>
         </div>
 
         {/* Footer */}
