@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Image, Video, Mic, Hash, Upload, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
 import { api } from '../../convex/_generated/api';
+import ProfileSetupModal from './ProfileSetupModal';
 
 interface CreatePostProps {
   isOpen: boolean;
@@ -16,17 +17,6 @@ interface FilePreview {
   type: 'image' | 'video' | 'audio';
 }
 
-const AVATAR_OPTIONS = [
-  { icon: User, color: 'bg-gray-500', name: 'ユーザー' },
-  { icon: Sparkles, color: 'bg-purple-500', name: 'スパークル' },
-  { icon: Heart, color: 'bg-pink-500', name: 'ハート' },
-  { icon: Star, color: 'bg-yellow-500', name: '星' },
-  { icon: Moon, color: 'bg-indigo-500', name: '月' },
-  { icon: Sun, color: 'bg-orange-500', name: '太陽' },
-  { icon: Leaf, color: 'bg-green-500', name: '葉' },
-  { icon: Flower, color: 'bg-rose-500', name: '花' },
-  { icon: Zap, color: 'bg-blue-500', name: '雷' },
-];
 
 const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated }) => {
   const [caption, setCaption] = useState('');
@@ -37,27 +27,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
   
-  // Profile setup states
-  const [profileUsername, setProfileUsername] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(0);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
-  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
-  const [usernameError, setUsernameError] = useState('');
-  
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const { isSignedIn, isLoaded } = useUser();
   const createPost = useMutation(api.posts.createPost);
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
   const checkIsFirstPostQuery = useQuery(api.userProfiles.checkIsFirstPost);
-  const createProfile = useMutation(api.userProfiles.createUserProfile);
-  const checkUsername = useQuery(api.userProfiles.checkUsernameAvailability, 
-    profileUsername.length >= 3 ? { username: profileUsername } : "skip"
-  );
 
   // デバッグ: クエリの状態をログ出力
   useEffect(() => {
@@ -74,27 +51,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       setShowProfileSetup(false);
       setShowLoginPrompt(false);
       setPendingSubmit(false);
-      // Reset profile setup states
-      setProfileUsername('');
-      setSelectedAvatar(0);
-      setAvatarFile(null);
-      setAvatarPreview('');
-      setUsernameError('');
     }
   }, [isOpen]);
 
-  // Username validation
-  useEffect(() => {
-    if (profileUsername.length >= 3 && checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-    } else if (profileUsername.length >= 3 && checkUsername === true) {
-      setUsernameError('');
-    } else if (profileUsername.length > 0 && profileUsername.length < 3) {
-      setUsernameError('ユーザー名は3文字以上で入力してください');
-    } else {
-      setUsernameError('');
-    }
-  }, [profileUsername, checkUsername]);
 
   // ログイン状態が変化した時の処理
   useEffect(() => {
@@ -113,92 +72,12 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     onClose();
   };
 
-  const validateProfileForm = () => {
-    if (profileUsername.length < 3) {
-      setUsernameError('ユーザー名は3文字以上で入力してください');
-      return false;
-    }
-    if (checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-      return false;
-    }
-    return true;
-  };
 
-  const handleUsernameChange = useCallback((value: string) => {
-    // Allow only alphanumeric characters and underscores
-    const filtered = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    setProfileUsername(filtered);
-  }, []);
 
-  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('画像ファイルを選択してください');
-        return;
-      }
 
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('ファイルサイズは5MB以下にしてください');
-        return;
-      }
-
-      setAvatarFile(file);
-      const url = URL.createObjectURL(file);
-      setAvatarPreview(url);
-    }
-    // Reset input
-    event.target.value = '';
-  };
-
-  const handleProfileSubmit = async () => {
-    if (!validateProfileForm()) return;
-
-    setIsCreatingProfile(true);
-    try {
-      let avatarString;
-
-      if (avatarFile) {
-        // Upload avatar image to Convex Storage
-        const storageId = await uploadFileToConvex(avatarFile);
-        avatarString = storageId;
-      } else {
-        // Use selected icon
-        const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
-        avatarString = JSON.stringify({
-          icon: selectedAvatarOption.name,
-          color: selectedAvatarOption.color,
-        });
-      }
-
-      await createProfile({
-        username: profileUsername.trim(),
-        displayName: profileUsername.trim(), // Use username as display name
-        avatar: avatarString,
-      });
-
-      setShowProfileSetup(false);
-      // Clean up avatar preview URL
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-      }
-      // プロファイル作成後、投稿を実行
-      executePostCreation();
-    } catch (error) {
-      console.error('プロファイル作成エラー:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('already taken')) {
-          setUsernameError('このユーザー名は既に使用されています');
-        } else {
-          alert(`プロファイル作成に失敗しました: ${error.message}`);
-        }
-      }
-    } finally {
-      setIsCreatingProfile(false);
-    }
+  const handleProfileCreated = () => {
+    setShowProfileSetup(false);
+    executePostCreation();
   };
 
 
@@ -424,155 +303,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setTags(prev => prev.filter(tag => tag !== tagToRemove));
   };
 
-  // プロファイル設定モーダルコンポーネント
-  const ProfileSetupModal = useCallback(() => {
-    const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
-    const AvatarIcon = selectedAvatarOption.icon;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-900">プロファイル設定</h2>
-            <button
-              onClick={handleCloseAll}
-              disabled={isCreatingProfile}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 space-y-6">
-
-            {/* Avatar Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">アイコンを選択</label>
-              
-              {/* Custom Image Upload */}
-              <div className="mb-4">
-                <button
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
-                >
-                  <div className="text-center">
-                    <Image className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">画像をアップロード</p>
-                    <p className="text-xs text-gray-500">5MB以下のJPG、PNG</p>
-                  </div>
-                </button>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarSelect}
-                />
-              </div>
-
-              {/* Icon Options */}
-              <div className="text-center text-sm text-gray-600 mb-2">または</div>
-              <div className="grid grid-cols-3 gap-3">
-                {AVATAR_OPTIONS.map((option, index) => {
-                  const IconComponent = option.icon;
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSelectedAvatar(index);
-                        setAvatarFile(null);
-                        setAvatarPreview('');
-                      }}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        selectedAvatar === index && !avatarFile
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full ${option.color} flex items-center justify-center mx-auto mb-2`}>
-                        <IconComponent className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-gray-600">{option.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Preview */}
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-center space-x-3">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    alt="Avatar preview"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className={`w-10 h-10 rounded-full ${selectedAvatarOption.color} flex items-center justify-center`}>
-                    <AvatarIcon className="w-5 h-5 text-white" />
-                  </div>
-                )}
-                <div className="text-left">
-                  <div className="text-sm text-gray-500">
-                    @{profileUsername || 'username'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Username */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">ユーザー名 *</label>
-              <input
-                key="profile-username-input"
-                type="text"
-                value={profileUsername}
-                onChange={(e) => handleUsernameChange(e.target.value)}
-                placeholder="username"
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  usernameError ? 'border-red-500' : 'border-gray-300'
-                }`}
-                maxLength={20}
-                autoComplete="off"
-              />
-              {usernameError && (
-                <p className="text-sm text-red-600">{usernameError}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                3文字以上、英数字とアンダースコアのみ使用可能
-              </p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
-            <button
-              onClick={handleProfileSubmit}
-              disabled={isCreatingProfile || !validateProfileForm()}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreatingProfile ? 'プロファイル作成中...' : 'プロファイルを作成して投稿'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }, [
-    selectedAvatar,
-    avatarPreview,
-    profileUsername,
-    usernameError,
-    isCreatingProfile,
-    avatarFile,
-    handleUsernameChange,
-    handleAvatarSelect,
-    handleProfileSubmit,
-    handleCloseAll,
-    validateProfileForm
-  ]);
 
   // ログインプロンプトコンポーネント
   const LoginPrompt = () => (
@@ -615,7 +345,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     <>
       {showLoginPrompt && <LoginPrompt />}
       
-      {showProfileSetup && <ProfileSetupModal />}
+      {showProfileSetup && (
+        <ProfileSetupModal
+          isOpen={showProfileSetup}
+          onClose={handleCloseAll}
+          onProfileCreated={handleProfileCreated}
+          uploadFileToConvex={uploadFileToConvex}
+        />
+      )}
       
       {isOpen && !showLoginPrompt && !showProfileSetup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
