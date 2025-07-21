@@ -17,9 +17,6 @@ const AVATAR_OPTIONS = [
   { icon: Star, color: 'bg-yellow-500', name: '星' },
   { icon: Moon, color: 'bg-indigo-500', name: '月' },
   { icon: Sun, color: 'bg-orange-500', name: '太陽' },
-  { icon: Leaf, color: 'bg-green-500', name: '葉' },
-  { icon: Flower, color: 'bg-rose-500', name: '花' },
-  { icon: Zap, color: 'bg-blue-500', name: '雷' },
 ];
 
 const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ 

@@ -13,9 +13,6 @@ const ICON_MAP = {
   '星': Star,
   '月': Moon,
   '太陽': Sun,
-  '葉': Leaf,
-  '花': Flower,
-  '雷': Zap,
 };
 
 export const parseAvatarString = (avatarString: string): AvatarData | null => {
