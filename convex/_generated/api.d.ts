@@ -13,10 +13,10 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as crons from "../crons.js";
 import type * as instagram from "../instagram.js";
 import type * as instagramPosts from "../instagramPosts.js";
 import type * as posts from "../posts.js";
-import type * as scheduler from "../scheduler.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -27,10 +27,10 @@ import type * as scheduler from "../scheduler.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   instagram: typeof instagram;
   instagramPosts: typeof instagramPosts;
   posts: typeof posts;
-  scheduler: typeof scheduler;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

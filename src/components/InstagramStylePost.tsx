@@ -1,5 +1,5 @@
-import React from 'react';
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Post } from '../types';
 import ConvexImage from './ConvexImage';
 
@@ -16,6 +16,12 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
   onSave, 
   onClick 
 }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // 画像配列を取得（imagesがあれば使用、なければimageUrlをフォールバック）
+  const images = post.images || [post.imageUrl];
+  const hasMultipleImages = images.length > 1;
+
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     onLike(post.id);
@@ -24,6 +30,16 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSave(post.id);
+  };
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
   };
 
   return (
@@ -66,16 +82,61 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
         */}
       </div>
 
-      {/* Image */}
+      {/* Image Carousel */}
       <div 
-        className="aspect-square w-full cursor-pointer"
+        className="aspect-square w-full cursor-pointer relative"
         onClick={() => onClick(post)}
       >
         <ConvexImage
-          storageId={post.imageUrl}
+          storageId={images[currentImageIndex]}
           alt="Post content"
           className="w-full h-full object-cover"
         />
+        
+        {/* Multiple images indicator */}
+        {hasMultipleImages && (
+          <>
+            {/* Navigation buttons */}
+            {currentImageIndex > 0 && (
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-1 z-10 transition-opacity"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
+            
+            {currentImageIndex < images.length - 1 && (
+              <button
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-1 z-10 transition-opacity"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+            
+            {/* Image counter */}
+            <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded-full">
+              {currentImageIndex + 1}/{images.length}
+            </div>
+            
+            {/* Dots indicator */}
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+              {images.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(index);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Action buttons - Hidden per user request */}

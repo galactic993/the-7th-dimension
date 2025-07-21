@@ -17,6 +17,7 @@
     "test:convex:coverage": "vitest --config vitest.convex.config.ts --coverage",
     "import:users": "tsx scripts/import-users.ts",
     "import:all": "tsx scripts/import-all-users.ts",
+    "import:specific": "tsx scripts/import-specific-users.ts",
     "delete:users": "tsx scripts/delete-all-users.ts"
   },
   "dependencies": {

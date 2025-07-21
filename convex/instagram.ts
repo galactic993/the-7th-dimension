@@ -181,14 +181,14 @@ async function getRecentMediaByHashtagInternal(hashtagId: string, accessToken: s
 
 export const getRecentPostsByHashtagName = action({
   args: {
-    hashtagName: v.string(),
+    hashtagName: v.optional(v.string()),
     accessToken: v.string(),
     accountId: v.string(),
     limit: v.optional(v.number()),
     apiVersion: v.optional(v.string())
   },
   handler: async (ctx, args) => {
-    const { hashtagName, accessToken, accountId, limit = 5, apiVersion = 'v22.0' } = args;
+    const { hashtagName = 'the7thdimension', accessToken, accountId, limit = 5, apiVersion = 'v22.0' } = args;
 
     try {
       // First, get the hashtag ID

@@ -34,6 +34,7 @@ export const mockPosts: Post[] = [
     id: '1',
     user: users[0],
     imageUrl: '/images/img1.png',
+    images: ['/images/img1.png', '/images/img2.png', '/images/img3.png'], // 複数画像のテスト
     caption: '中村咲太先生の遠隔ヒーリングワークショップに参加しました✨ エネルギーの流れを感じながら、心の奥深くにある愛と光に触れることができました。宇宙との繋がりを実感し、魂が浄化されていく感覚が忘れられません 🌟 #中村咲太WSヒーリングシェア',
     likes: 1247,
     comments: [
@@ -85,6 +86,7 @@ export const mockPosts: Post[] = [
     id: '3',
     user: users[2],
     imageUrl: '/images/img3.png',
+    images: ['/images/img3.png', '/images/img4.png'], // 2枚の画像のテスト
     caption: '中村咲太先生のヒーリングワークショップで感じた深い平安 🕊️ 瞑想の中で見えた光の世界は、まさに天国のようでした。チャクラが開かれ、生命エネルギーが全身を駆け巡る感覚。この体験を通して、本当の自分と出会えた気がします ✨ #中村咲太WSヒーリングシェア',
     likes: 2156,
     comments: [

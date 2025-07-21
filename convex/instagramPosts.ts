@@ -163,37 +163,7 @@ export const storeFetchedPosts = internalMutation({
     let updatedPosts = 0;
 
     for (const post of args.posts) {
-      // Store in instagramPosts table for tracking
-      const existing = await ctx.db
-        .query("instagramPosts")
-        .withIndex("by_instagram_id", (q) => q.eq("instagramId", post.id))
-        .first();
-
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          likeCount: post.like_count,
-          commentsCount: post.comments_count,
-          lastChecked: now
-        });
-        updatedPosts++;
-      } else {
-        await ctx.db.insert("instagramPosts", {
-          instagramId: post.id,
-          caption: post.caption,
-          mediaType: post.media_type,
-          mediaUrl: post.media_url,
-          permalink: post.permalink,
-          timestamp: post.timestamp,
-          likeCount: post.like_count,
-          commentsCount: post.comments_count,
-          hashtag: args.hashtag,
-          processedAt: now,
-          lastChecked: now
-        });
-        newPosts++;
-      }
-
-      // Also store in posts table for UI display
+      // Store in posts table for UI display
       // Check for duplicates using instagramId first, then permalink as fallback
       let existingPost = await ctx.db
         .query("posts")
@@ -220,10 +190,15 @@ export const storeFetchedPosts = internalMutation({
         const avatar = post.owner?.profile_picture_url || '/images/default-avatar.png';
         
         try {
+          // Extract actual username from permalink if available
+          const extractedUsername = extractUsernameFromPermalink(post.permalink);
+          const finalUsername = extractedUsername || `user_${post.id.slice(-8)}`;
+          const finalDisplayName = extractedUsername || `@user_${post.id.slice(-8)}`;
+          
           await ctx.db.insert("posts", {
             userId: userId,
-            username: username,
-            displayName: displayName,
+            username: finalUsername,
+            displayName: finalDisplayName,
             avatar: avatar,
             imageUrls: isVideo ? [] : [post.media_url],
             videoUrl: isVideo ? post.media_url : undefined,
@@ -237,6 +212,7 @@ export const storeFetchedPosts = internalMutation({
             permalink: post.permalink,
             instagramId: post.id,
           });
+          newPosts++;
         } catch (error) {
           // Handle potential race condition duplicates gracefully
           console.log(`Skipping duplicate post with instagramId: ${post.id}`);
@@ -253,6 +229,7 @@ export const storeFetchedPosts = internalMutation({
         
         if (Object.keys(updates).length > 0) {
           await ctx.db.patch(existingPost._id, updates);
+          updatedPosts++;
         }
       }
     }
@@ -483,6 +460,19 @@ function extractHashtagsFromCaption(caption: string): string[] {
   return matches ? matches.map(tag => tag.substring(1)) : [];
 }
 
+// Helper function to extract username from Instagram permalink
+function extractUsernameFromPermalink(permalink: string): string | null {
+  if (!permalink) return null;
+  
+  // Instagram permalink format: https://www.instagram.com/p/POST_ID/ or https://instagram.com/p/POST_ID/
+  // We need to extract username from the actual URL structure, but hashtag search permalinks don't contain username
+  // However, if we can get the media owner info via a separate API call, we would do it here
+  
+  // For now, return null as hashtag search doesn't provide username info
+  // This function is prepared for future enhancement if we get username data from other sources
+  return null;
+}
+
 export const removeDuplicatePosts = internalMutation({
   args: {
     source: v.optional(v.string())
@@ -550,5 +540,60 @@ export const removeDuplicatePosts = internalMutation({
     
     console.log(`Total duplicates removed: ${removedCount}`);
     return removedCount;
+  }
+});
+
+export const updateHashtagActive = mutation({
+  args: {
+    hashtagName: v.string(),
+    isActive: v.boolean()
+  },
+  handler: async (ctx, args) => {
+    const hashtag = await ctx.db
+      .query("hashtagConfigs")
+      .withIndex("by_name", (q) => q.eq("name", args.hashtagName))
+      .first();
+    
+    if (hashtag) {
+      await ctx.db.patch(hashtag._id, {
+        isActive: args.isActive
+      });
+    }
+    
+    return `Updated ${args.hashtagName} active status to ${args.isActive}`;
+  }
+});
+
+export const cleanupHashtagConfigs = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // the7thdimension以外のすべてのハッシュタグ設定を削除
+    const allHashtags = await ctx.db.query("hashtagConfigs").collect();
+    let deletedCount = 0;
+    
+    for (const hashtag of allHashtags) {
+      if (hashtag.name !== "the7thdimension") {
+        await ctx.db.delete(hashtag._id);
+        deletedCount++;
+      }
+    }
+    
+    return `Deleted ${deletedCount} hashtag configs. Only the7thdimension remains.`;
+  }
+});
+
+export const cleanupInstagramPostsTable = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // instagramPostsテーブルの全データを削除（重複データのため）
+    const allPosts = await ctx.db.query("instagramPosts").collect();
+    let deletedCount = 0;
+    
+    for (const post of allPosts) {
+      await ctx.db.delete(post._id);
+      deletedCount++;
+    }
+    
+    return `Deleted ${deletedCount} duplicate records from instagramPosts table.`;
   }
 }); 

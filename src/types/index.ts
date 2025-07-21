@@ -9,7 +9,8 @@ export interface User {
 export interface Post {
   id: string;
   user: User;
-  imageUrl: string;
+  imageUrl: string; // 後方互換性のため保持
+  images?: string[]; // 複数画像サポート（省略可能）
   caption: string;
   likes: number;
   comments: Comment[];
