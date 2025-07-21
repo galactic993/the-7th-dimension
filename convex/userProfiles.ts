@@ -117,7 +117,7 @@ export const updateUserProfile = mutation({
     if (args.username && args.username !== profile.username) {
       const existingUsername = await ctx.db
         .query("userProfiles")
-        .withIndex("by_username", (q) => q.eq("username", args.username))
+        .withIndex("by_username", (q) => q.eq("username", args.username!))
         .first();
 
       if (existingUsername) {
