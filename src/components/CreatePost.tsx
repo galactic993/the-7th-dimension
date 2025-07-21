@@ -114,7 +114,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       
       alert('投稿が正常に作成されました！');
       onPostCreated();
-      handleCloseAll();
+      setShowProfileSetup(false);
+      setShowLoginPrompt(false);
+      onClose();
     } catch (error) {
       console.error('投稿作成エラー:', error);
       
@@ -133,7 +135,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     } finally {
       setIsUploading(false);
     }
-  }, [files, uploadFileToConvex, createPost, caption, tags, onPostCreated]);
+  }, [files, uploadFileToConvex, createPost, caption, tags, onPostCreated, onClose]);
 
   const continueSubmission = useCallback(async () => {
     // デバッグログを追加
