@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Image, Video, Mic, Hash, Upload, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
@@ -125,11 +125,11 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     return true;
   };
 
-  const handleUsernameChange = (value: string) => {
+  const handleUsernameChange = useCallback((value: string) => {
     // Allow only alphanumeric characters and underscores
     const filtered = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     setProfileUsername(filtered);
-  };
+  }, []);
 
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -425,7 +425,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   };
 
   // プロファイル設定モーダルコンポーネント
-  const ProfileSetupModal = () => {
+  const ProfileSetupModal = useCallback(() => {
     const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
     const AvatarIcon = selectedAvatarOption.icon;
 
@@ -527,6 +527,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">ユーザー名 *</label>
               <input
+                key="profile-username-input"
                 type="text"
                 value={profileUsername}
                 onChange={(e) => handleUsernameChange(e.target.value)}
@@ -535,6 +536,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
                   usernameError ? 'border-red-500' : 'border-gray-300'
                 }`}
                 maxLength={20}
+                autoComplete="off"
               />
               {usernameError && (
                 <p className="text-sm text-red-600">{usernameError}</p>
@@ -558,7 +560,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
         </div>
       </div>
     );
-  };
+  }, [
+    selectedAvatar,
+    avatarPreview,
+    profileUsername,
+    usernameError,
+    isCreatingProfile,
+    avatarFile,
+    handleUsernameChange,
+    handleAvatarSelect,
+    handleProfileSubmit,
+    handleCloseAll,
+    validateProfileForm
+  ]);
 
   // ログインプロンプトコンポーネント
   const LoginPrompt = () => (
