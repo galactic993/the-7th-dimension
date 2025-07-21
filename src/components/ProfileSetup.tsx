@@ -121,12 +121,6 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          <div className="text-center">
-            <p className="text-gray-600 text-sm mb-4">
-              はじめての投稿へようこそ！<br />
-              まずはプロファイルを設定しましょう。
-            </p>
-          </div>
 
           {/* Avatar Selection */}
           <div className="space-y-3">

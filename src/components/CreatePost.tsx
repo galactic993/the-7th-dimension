@@ -39,14 +39,16 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   
   // Profile setup states
   const [profileUsername, setProfileUsername] = useState('');
-  const [profileDisplayName, setProfileDisplayName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(0);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [usernameError, setUsernameError] = useState('');
   
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   
   const { isSignedIn, isLoaded } = useUser();
   const createPost = useMutation(api.posts.createPost);
@@ -74,8 +76,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       setPendingSubmit(false);
       // Reset profile setup states
       setProfileUsername('');
-      setProfileDisplayName('');
       setSelectedAvatar(0);
+      setAvatarFile(null);
+      setAvatarPreview('');
       setUsernameError('');
     }
   }, [isOpen]);
@@ -119,9 +122,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       setUsernameError('このユーザー名は既に使用されています');
       return false;
     }
-    if (!profileDisplayName.trim()) {
-      return false;
-    }
     return true;
   };
 
@@ -131,24 +131,60 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     setProfileUsername(filtered);
   };
 
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください');
+        return;
+      }
+
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('ファイルサイズは5MB以下にしてください');
+        return;
+      }
+
+      setAvatarFile(file);
+      const url = URL.createObjectURL(file);
+      setAvatarPreview(url);
+    }
+    // Reset input
+    event.target.value = '';
+  };
+
   const handleProfileSubmit = async () => {
     if (!validateProfileForm()) return;
 
     setIsCreatingProfile(true);
     try {
-      const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
-      const avatarString = JSON.stringify({
-        icon: selectedAvatarOption.name,
-        color: selectedAvatarOption.color,
-      });
+      let avatarString;
+
+      if (avatarFile) {
+        // Upload avatar image to Convex Storage
+        const storageId = await uploadFileToConvex(avatarFile);
+        avatarString = storageId;
+      } else {
+        // Use selected icon
+        const selectedAvatarOption = AVATAR_OPTIONS[selectedAvatar];
+        avatarString = JSON.stringify({
+          icon: selectedAvatarOption.name,
+          color: selectedAvatarOption.color,
+        });
+      }
 
       await createProfile({
         username: profileUsername.trim(),
-        displayName: profileDisplayName.trim(),
+        displayName: profileUsername.trim(), // Use username as display name
         avatar: avatarString,
       });
 
       setShowProfileSetup(false);
+      // Clean up avatar preview URL
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
       // プロファイル作成後、投稿を実行
       executePostCreation();
     } catch (error) {
@@ -410,25 +446,47 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
 
           {/* Content */}
           <div className="p-6 space-y-6">
-            <div className="text-center">
-              <p className="text-gray-600 text-sm mb-4">
-                はじめての投稿へようこそ！<br />
-                まずはプロファイルを設定しましょう。
-              </p>
-            </div>
 
             {/* Avatar Selection */}
             <div className="space-y-3">
               <label className="text-sm font-medium text-gray-700">アイコンを選択</label>
+              
+              {/* Custom Image Upload */}
+              <div className="mb-4">
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
+                >
+                  <div className="text-center">
+                    <Image className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">画像をアップロード</p>
+                    <p className="text-xs text-gray-500">5MB以下のJPG、PNG</p>
+                  </div>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarSelect}
+                />
+              </div>
+
+              {/* Icon Options */}
+              <div className="text-center text-sm text-gray-600 mb-2">または</div>
               <div className="grid grid-cols-3 gap-3">
                 {AVATAR_OPTIONS.map((option, index) => {
                   const IconComponent = option.icon;
                   return (
                     <button
                       key={index}
-                      onClick={() => setSelectedAvatar(index)}
+                      onClick={() => {
+                        setSelectedAvatar(index);
+                        setAvatarFile(null);
+                        setAvatarPreview('');
+                      }}
                       className={`p-3 rounded-lg border-2 transition-all ${
-                        selectedAvatar === index
+                        selectedAvatar === index && !avatarFile
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
@@ -446,13 +504,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
             {/* Preview */}
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-center space-x-3">
-                <div className={`w-10 h-10 rounded-full ${selectedAvatarOption.color} flex items-center justify-center`}>
-                  <AvatarIcon className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="font-medium text-gray-900">
-                    {profileDisplayName || 'あなたの表示名'}
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-full ${selectedAvatarOption.color} flex items-center justify-center`}>
+                    <AvatarIcon className="w-5 h-5 text-white" />
                   </div>
+                )}
+                <div className="text-left">
                   <div className="text-sm text-gray-500">
                     @{profileUsername || 'username'}
                   </div>
@@ -479,19 +542,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
               <p className="text-xs text-gray-500">
                 3文字以上、英数字とアンダースコアのみ使用可能
               </p>
-            </div>
-
-            {/* Display Name */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">表示名 *</label>
-              <input
-                type="text"
-                value={profileDisplayName}
-                onChange={(e) => setProfileDisplayName(e.target.value)}
-                placeholder="あなたの表示名"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                maxLength={30}
-              />
             </div>
           </div>
 
