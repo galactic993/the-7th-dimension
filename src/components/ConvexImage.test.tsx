@@ -61,7 +61,7 @@ describe('ConvexImage', () => {
     const image = screen.getByAltText('Test image');
     fireEvent.error(image);
     
-    expect(image).toHaveAttribute('src', 'https://via.placeholder.com/400x400/e5e7eb/9ca3af?text=画像');
+    expect(image).toHaveAttribute('src', '/images/default.png/400x400/e5e7eb/9ca3af?text=画像');
   });
 
   it('handles empty storageId', () => {

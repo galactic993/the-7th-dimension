@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
@@ -36,7 +36,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
   const checkIsFirstPostQuery = useQuery(api.userProfiles.checkIsFirstPost);
 
-  const uploadFileToConvex = async (file: File): Promise<string> => {
+  const uploadFileToConvex = useCallback(async (file: File): Promise<string> => {
     const uploadUrl = await generateUploadUrl();
     
     const response = await fetch(uploadUrl, {
@@ -51,9 +51,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
 
     const { storageId } = await response.json();
     return storageId;
-  };
+  }, [generateUploadUrl]);
 
-  const executePostCreation = async () => {
+  const executePostCreation = useCallback(async () => {
     setIsUploading(true);
     
     try {
@@ -133,9 +133,9 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [files, uploadFileToConvex, createPost, caption, tags, onPostCreated]);
 
-  const continueSubmission = async () => {
+  const continueSubmission = useCallback(async () => {
     // デバッグログを追加
     console.log('continueSubmission called');
     console.log('checkIsFirstPostQuery:', checkIsFirstPostQuery);
@@ -167,18 +167,18 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       console.log('Unexpected query result, treating as first post');
       setShowProfileSetup(true);
     }
-  };
+  }, [checkIsFirstPostQuery, isSignedIn, isLoaded, executePostCreation]);
 
-  const handleCloseAll = () => {
+  const handleCloseAll = useCallback(() => {
     setShowProfileSetup(false);
     setShowLoginPrompt(false);
     onClose();
-  };
+  }, [onClose]);
 
-  const handleProfileCreated = () => {
+  const handleProfileCreated = useCallback(() => {
     setShowProfileSetup(false);
     executePostCreation();
-  };
+  }, [executePostCreation]);
 
   // デバッグ: クエリの状態をログ出力
   useEffect(() => {
@@ -206,7 +206,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
       // ログイン後、投稿処理を続行
       continueSubmission();
     }
-  }, [isSignedIn, pendingSubmit]);
+  }, [isSignedIn, pendingSubmit, continueSubmission]);
 
 
   const extractHashtags = (text: string): string[] => {

@@ -179,7 +179,7 @@ export const mockPosts: Post[] = [
       avatar: 'https://images.pexels.com/photos/1484794/pexels-photo-1484794.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
       isVerified: true
     },
-    imageUrl: 'https://via.placeholder.com/400x400.png?text=Instagram+Embed',
+    imageUrl: '/images/default.png/400x400.png?text=Instagram+Embed',
     caption: 'This is a test Instagram embed post',
     likes: 1000,
     comments: [],
