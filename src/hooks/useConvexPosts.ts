@@ -45,7 +45,7 @@ export const useConvexPosts = (): UseConvexPostsResult => {
           id: 'instagram-user',
           username: 'instagram',
           displayName: 'Instagram',
-          avatar: '/api/placeholder/40/40',
+          avatar: '/images/default.png',
           isVerified: true,
         },
         imageUrl: post.media_url,

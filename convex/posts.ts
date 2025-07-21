@@ -37,7 +37,7 @@ export const createPost = mutation({
       }
       username = user.nickname || user.email?.split('@')[0] || "user";
       displayName = user.name || user.nickname || "Unknown User";
-      avatar = user.pictureUrl || "/api/placeholder/40/40";
+      avatar = user.pictureUrl || "/images/default.png";
     }
 
     const postId = await ctx.db.insert("posts", {

@@ -30,11 +30,13 @@ export const renderAvatar = (avatarString: string, size: 'sm' | 'md' | 'lg' = 'm
   const avatarData = parseAvatarString(avatarString);
   
   if (!avatarData) {
-    // Fallback to default user icon
+    // Fallback to default image
     return (
-      <div className={`rounded-full bg-gray-500 flex items-center justify-center ${getSizeClasses(size)}`}>
-        <User className={`text-white ${getIconSizeClasses(size)}`} />
-      </div>
+      <img 
+        src="/images/default.png" 
+        alt="Default avatar"
+        className={`rounded-full object-cover ${getSizeClasses(size)}`}
+      />
     );
   }
 
