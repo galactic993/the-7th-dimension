@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -29,8 +29,12 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
   const [usernameError, setUsernameError] = useState('');
 
   const createProfile = useMutation(api.userProfiles.createUserProfile);
+  const debouncedUsername = useMemo(() => {
+    return username.length >= 3 ? username : null;
+  }, [username]);
+
   const checkUsername = useQuery(api.userProfiles.checkUsernameAvailability, 
-    username.length >= 3 ? { username } : "skip"
+    debouncedUsername ? { username: debouncedUsername } : "skip"
   );
 
   useEffect(() => {
@@ -93,11 +97,11 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
     }
   };
 
-  const handleUsernameChange = (value: string) => {
+  const handleUsernameChange = useCallback((value: string) => {
     // Allow only alphanumeric characters and underscores
     const filtered = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     setUsername(filtered);
-  };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -106,7 +110,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">プロファイル設定</h2>
@@ -120,7 +124,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
 
           {/* Avatar Selection */}
           <div className="space-y-3">
