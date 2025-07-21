@@ -14,7 +14,7 @@ const ConvexImage: React.FC<ConvexImageProps> = ({
   storageId, 
   alt = '', 
   className = '', 
-  fallback = 'https://via.placeholder.com/400x400/e5e7eb/9ca3af?text=画像' 
+  fallback = '/images/default.png' 
 }) => {
   // Check if storageId is a valid Convex storage ID
   const isConvexStorageId = storageId && storageId.startsWith('k');

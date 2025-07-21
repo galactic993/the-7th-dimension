@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, User, Sparkles, Heart, Star, Moon, Sun, Leaf, Flower, Zap, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -64,23 +64,16 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
     }
   }, [username, debouncedUsername, checkUsername]);
 
-  const validateForm = () => {
-    if (username.length < 3) {
-      setUsernameError('ユーザー名は3文字以上で入力してください');
-      return false;
-    }
-    if (checkUsername === false) {
-      setUsernameError('このユーザー名は既に使用されています');
-      return false;
-    }
-    if (!username.trim()) {
-      return false;
-    }
+  // フォーム有効性の状態をメモ化
+  const isFormValid = useMemo(() => {
+    if (username.length < 3) return false;
+    if (checkUsername === false) return false;
+    if (!username.trim()) return false;
     return true;
-  };
+  }, [username, checkUsername]);
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!isFormValid) return;
 
     setIsSubmitting(true);
     try {
@@ -150,8 +143,8 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
   const AvatarIcon = selectedAvatarOption.icon;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-md w-full my-auto max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">プロファイル設定</h2>
@@ -165,7 +158,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
 
           {/* Avatar Selection */}
           <div className="space-y-3">
@@ -272,7 +265,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
         <div className="px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || !validateForm()}
+            disabled={isSubmitting || !isFormValid}
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'プロファイル作成中...' : 'プロファイルを作成'}
