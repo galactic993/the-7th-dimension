@@ -33,7 +33,17 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   const { isSignedIn, isLoaded } = useUser();
   const createPost = useMutation(api.posts.createPost);
   const generateUploadUrl = useMutation(api.posts.generateUploadUrl);
-  const checkIsFirstPost = useMutation(api.userProfiles.checkIsFirstPost);
+  const checkIsFirstPostQuery = useQuery(api.userProfiles.checkIsFirstPost);
+
+  // デバッグ: クエリの状態をログ出力
+  useEffect(() => {
+    console.log('Query state changed:', {
+      isOpen,
+      isSignedIn,
+      isLoaded,
+      checkIsFirstPostQuery
+    });
+  }, [isOpen, isSignedIn, isLoaded, checkIsFirstPostQuery]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -65,11 +75,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     onClose();
   };
 
-  const handleLoginSuccess = () => {
-    setShowLoginPrompt(false);
-    // ログイン後、投稿処理を続行
-    handleSubmit();
-  };
 
   const extractHashtags = (text: string): string[] => {
     const hashtagRegex = /#[\w\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]+/g;
@@ -168,19 +173,37 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
   };
 
   const continueSubmission = async () => {
-    // 初回投稿かチェック
-    try {
-      const isFirst = await checkIsFirstPost();
-      if (isFirst) {
-        setShowProfileSetup(true);
-        return;
-      }
-    } catch (error) {
-      console.error('初回投稿チェックエラー:', error);
+    // デバッグログを追加
+    console.log('continueSubmission called');
+    console.log('checkIsFirstPostQuery:', checkIsFirstPostQuery);
+    console.log('isSignedIn:', isSignedIn);
+    console.log('isLoaded:', isLoaded);
+
+    // 認証エラーの場合は初回投稿として扱う
+    if (!isSignedIn || !isLoaded) {
+      console.log('User not properly authenticated, showing profile setup');
+      setShowProfileSetup(true);
+      return;
     }
 
-    // 投稿を実行
-    executePostCreation();
+    // 初回投稿かチェック（queryの結果を使用）
+    if (checkIsFirstPostQuery === true) {
+      console.log('First post detected, showing profile setup');
+      setShowProfileSetup(true);
+      return;
+    } else if (checkIsFirstPostQuery === undefined) {
+      // まだクエリが完了していない場合は初回投稿として扱う
+      console.log('Query still loading, treating as first post');
+      setShowProfileSetup(true);
+      return;
+    } else if (checkIsFirstPostQuery === false) {
+      console.log('Not first post, proceeding with post creation');
+      // 投稿を実行
+      executePostCreation();
+    } else {
+      console.log('Unexpected query result, treating as first post');
+      setShowProfileSetup(true);
+    }
   };
 
   const executePostCreation = async () => {

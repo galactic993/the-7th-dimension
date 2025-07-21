@@ -21,7 +21,10 @@ export const getUserProfile = query({
 export const checkIsFirstPost = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
+    console.log('checkIsFirstPost - userId:', userId);
+    
     if (!userId) {
+      console.log('checkIsFirstPost - No userId, returning false');
       return false;
     }
 
@@ -30,14 +33,19 @@ export const checkIsFirstPost = query({
       .query("posts")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
+    console.log('checkIsFirstPost - userPosts:', userPosts);
 
     // Check if user has a profile
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .first();
+    console.log('checkIsFirstPost - userProfile:', userProfile);
 
-    return !userPosts && !userProfile;
+    const isFirstPost = !userPosts && !userProfile;
+    console.log('checkIsFirstPost - result:', isFirstPost);
+    
+    return isFirstPost;
   },
 });
 
