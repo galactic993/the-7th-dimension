@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Image, Video, Mic, Hash, Upload } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { useUser, SignIn } from '@clerk/clerk-react';
@@ -49,9 +49,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     if (isSignedIn && pendingSubmit) {
       setPendingSubmit(false);
       setShowLoginPrompt(false);
-      handleContinueSubmission();
+      // Check if first post inline to avoid dependency issues
+      if (checkIsFirstPostQuery === true || checkIsFirstPostQuery === undefined) {
+        setShowProfileSetup(true);
+        return;
+      }
+      executePostCreation();
     }
-  }, [isSignedIn, pendingSubmit]);
+  }, [isSignedIn, pendingSubmit, checkIsFirstPostQuery, executePostCreation]);
 
   const uploadFileToConvex = async (file: File): Promise<string> => {
     const uploadUrl = await generateUploadUrl();
@@ -70,7 +75,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     return storageId;
   };
 
-  const executePostCreation = async () => {
+  const executePostCreation = useCallback(async () => {
     setIsUploading(true);
     
     try {
@@ -118,7 +123,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [files, uploadFileToConvex, createPost, caption, tags, onPostCreated, onClose]);
 
   const handleContinueSubmission = () => {
     // Check if first post
