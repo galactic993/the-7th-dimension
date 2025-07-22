@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Heart, MessageCircle, Bookmark, MapPin, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Post } from '../types';
 import ConvexImage from './ConvexImage';
+import ConvexAudio from './ConvexAudio';
 import { renderAvatar } from '../utils/avatarUtils';
 
 interface PostModalProps {
@@ -42,50 +43,68 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
     >
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         <div className="flex h-full">
-          {/* Image Carousel */}
+          {/* Media Content */}
           <div className="flex-1 bg-black flex items-center justify-center relative">
-            <ConvexImage
-              storageId={images[currentImageIndex]}
-              alt="Post"
-              className="max-w-full max-h-full object-contain"
-            />
-            
-            {/* Multiple images navigation */}
-            {hasMultipleImages && (
+            {/* Images */}
+            {images.length > 0 && (
               <>
-                {/* Navigation buttons */}
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 z-10 transition-opacity"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
+                <ConvexImage
+                  storageId={images[currentImageIndex]}
+                  alt="Post"
+                  className="max-w-full max-h-full object-contain"
+                />
                 
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 z-10 transition-opacity"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-                
-                {/* Image counter */}
-                <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-sm px-3 py-1 rounded-full">
-                  {currentImageIndex + 1}/{images.length}
-                </div>
-                
-                {/* Dots indicator */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                  {images.map((_, index) => (
+                {/* Multiple images navigation */}
+                {hasMultipleImages && (
+                  <>
+                    {/* Navigation buttons */}
                     <button
-                      key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-3 h-3 rounded-full transition-colors ${
-                        index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                      }`}
-                    />
-                  ))}
-                </div>
+                      onClick={handlePrevImage}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 z-10 transition-opacity"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 z-10 transition-opacity"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                    
+                    {/* Image counter */}
+                    <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white text-sm px-3 py-1 rounded-full">
+                      {currentImageIndex + 1}/{images.length}
+                    </div>
+                    
+                    {/* Dots indicator */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                      {images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-3 h-3 rounded-full transition-colors ${
+                            index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </>
+            )}
+            
+            {/* Audio-only posts */}
+            {images.length === 0 && post.audioUrl && (
+              <div className="w-full max-w-md p-8">
+                <ConvexAudio
+                  storageId={post.audioUrl}
+                  alt={`${post.user.username}の音声投稿`}
+                  className="w-full bg-gray-900"
+                  showControls={true}
+                  showDownload={true}
+                />
+              </div>
             )}
           </div>
 
@@ -124,6 +143,19 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
                 </button>
               </div>
             </div>
+
+            {/* Audio Content for posts with images */}
+            {images.length > 0 && post.audioUrl && (
+              <div className="p-4 border-b border-gray-200">
+                <ConvexAudio
+                  storageId={post.audioUrl}
+                  alt={`${post.user.username}の音声投稿`}
+                  className="w-full"
+                  showControls={true}
+                  showDownload={false}
+                />
+              </div>
+            )}
 
             {/* Caption */}
             <div className="p-4 border-b border-gray-200">
