@@ -26,36 +26,18 @@ interface ImportResult {
   name?: string;
 }
 
-// 5名の特定ユーザー情報
+// 2名の特定ユーザー情報
 const specificUsers = [
   {
-    email: "hamihami520@gmail.com",
-    firstName: "玄美",
-    lastName: "楠木",
-    participationType: "会場参加"
-  },
-  {
-    email: "nohakana@hotmail.com", 
-    firstName: "加奈子",
-    lastName: "野原",
-    participationType: "会場参加"
-  },
-  {
-    email: "poporousagi@yahoo.co.jp",
-    firstName: "美紀", 
-    lastName: "斉藤",
+    email: "gime.kampo@gmail.com",
+    firstName: "典子",
+    lastName: "桐川",
     participationType: "オンライン参加"
   },
   {
-    email: "taekoa333@gmail.com",
-    firstName: "妙子",
-    lastName: "安藤", 
-    participationType: "オンライン参加"
-  },
-  {
-    email: "k1r.akasaka@gmail.com",
-    firstName: "一郎",
-    lastName: "赤坂",
+    email: "pika1009per@gmail.com",
+    firstName: "志織",
+    lastName: "山崎",
     participationType: "オンライン参加"
   }
 ];
@@ -90,7 +72,7 @@ const clerkClient = {
 };
 
 async function importSpecificUsers(): Promise<ImportResult[]> {
-  console.log(`🎯 特定の5名のユーザーをClerkに作成します\n`);
+  console.log(`🎯 特定の2名のユーザーをClerkに作成します\n`);
   
   const results: ImportResult[] = [];
   

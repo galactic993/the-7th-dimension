@@ -24,59 +24,24 @@ export const useConvexPosts = (): UseConvexPostsResult => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const postsPerPage = 20;
 
-  // ConvexからInstagram投稿を取得
-  const instagramPosts = useQuery(api.instagramPosts.getStoredPosts, {});
-
-  // Convexからユーザー投稿を取得
+  // Convexからユーザー投稿を取得（Instagram投稿も含む）
   const userPosts = useQuery(api.posts.getAllPosts);
 
-  const loading = instagramPosts === undefined || userPosts === undefined;
+  const loading = userPosts === undefined;
 
   const posts = useMemo(() => {
     if (loading) return [];
 
-    const allPosts: Post[] = [];
-
-    // Instagram投稿をPost型に変換
-    if (instagramPosts) {
-      const convertedInstagramPosts: Post[] = instagramPosts.map((post) => ({
-        id: post.id,
-        user: {
-          id: 'instagram-user',
-          username: 'instagram',
-          displayName: 'Instagram',
-          avatar: '/images/default.png',
-          isVerified: true,
-        },
-        imageUrl: post.media_url,
-        images: [post.media_url],
-        audioUrl: undefined,
-        videoUrl: post.media_type === 'VIDEO' ? post.media_url : undefined,
-        caption: post.caption || '',
-        likes: post.like_count || 0,
-        comments: [], // Instagram API doesn't provide comment details
-        timestamp: post.timestamp,
-        tags: extractHashtags(post.caption || ''),
-        location: undefined,
-        isLiked: false,
-        isSaved: false,
-        source: 'instagram',
-        permalink: post.permalink,
-        instagramUrl: post.permalink
-      }));
-      allPosts.push(...convertedInstagramPosts);
-    }
-
-    // ユーザー投稿を追加
+    // Convexのpostテーブルからすべての投稿を取得（Instagram投稿も含む）
     if (userPosts) {
-      allPosts.push(...userPosts);
+      // タイムスタンプで降順ソート
+      return userPosts.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
     }
 
-    // タイムスタンプで降順ソート
-    return allPosts.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-  }, [instagramPosts, userPosts, loading]);
+    return [];
+  }, [userPosts, loading]);
 
   useEffect(() => {
     if (!loading && posts.length === 0) {

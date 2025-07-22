@@ -16,9 +16,6 @@ const AVATAR_OPTIONS = [
   { icon: Star, color: 'bg-yellow-500', name: '星' },
   { icon: Moon, color: 'bg-indigo-500', name: '月' },
   { icon: Sun, color: 'bg-orange-500', name: '太陽' },
-  { icon: Leaf, color: 'bg-green-500', name: '葉' },
-  { icon: Flower, color: 'bg-rose-500', name: '花' },
-  { icon: Zap, color: 'bg-blue-500', name: '雷' },
 ];
 
 const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileCreated }) => {
@@ -106,8 +103,8 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
   };
 
   const handleUsernameChange = useCallback((value: string) => {
-    // Allow only alphanumeric characters and underscores
-    const filtered = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    // Allow alphanumeric characters, underscores, and Japanese characters (hiragana, katakana, kanji)
+    const filtered = value.replace(/[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '');
     setUsername(filtered);
   }, []);
 
@@ -255,7 +252,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onClose, onProfileC
               <p className="text-sm text-red-600">{usernameError}</p>
             )}
             <p className="text-xs text-gray-500">
-              3文字以上、英数字とアンダースコアのみ使用可能
+              3文字以上、英数字・アンダースコア・日本語使用可能
             </p>
           </div>
 

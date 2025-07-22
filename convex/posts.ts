@@ -112,6 +112,8 @@ export const getAllPosts = query({
           isLiked,
           isSaved,
           source: post.source,
+          permalink: post.permalink,
+          instagramUrl: post.permalink,
         };
       })
     );
