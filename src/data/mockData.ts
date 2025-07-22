@@ -171,6 +171,56 @@ export const mockPosts: Post[] = [
     source: 'mock' as const
   },
   {
+    id: 'audio-test-1',
+    user: {
+      id: 'audio-test',
+      username: 'voice_healing',
+      displayName: '音声ヒーリング',
+      avatar: 'https://images.pexels.com/photos/1484794/pexels-photo-1484794.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      isVerified: true
+    },
+    imageUrl: '/images/img1.png',
+    audioUrl: '/audio/sample.m4a', // テスト用音声ファイル
+    caption: '中村咲太先生の遠隔ヒーリングワークショップで体験した特別な音声メッセージです。深い瞑想状態で受け取ったメッセージを皆さんとシェアします 🌟 この音声を聞きながら、心を静めて宇宙の愛を感じてください #中村咲太WSヒーリングシェア #音声メッセージ',
+    likes: 1500,
+    comments: [
+      {
+        id: 'audio-1',
+        user: users[1],
+        text: '音声メッセージ、とても癒されました✨',
+        timestamp: '2h',
+        likes: 15
+      }
+    ],
+    timestamp: '1h',
+    tags: ['音声メッセージ', 'ヒーリング', '瞑想', '愛と光'],
+    location: 'オンライン',
+    isLiked: false,
+    isSaved: false,
+    source: 'mock' as const
+  },
+  {
+    id: 'audio-test-2',
+    user: {
+      id: 'meditation-master',
+      username: 'meditation_master',
+      displayName: '瞑想マスター',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop',
+      isVerified: false
+    },
+    imageUrl: '/images/img2.png',
+    audioUrl: '/audio/sample.m4a', // テスト用音声ファイル
+    caption: 'チベットの僧院で録音した特別な音響体験 🔔 この鐘の音が心の奥底に響き、チャクラを開放する力があります。静寂な環境で聞くことをお勧めします #瞑想 #チベット #音響ヒーリング',
+    likes: 892,
+    comments: [],
+    timestamp: '3h',
+    tags: ['瞑想', '音響ヒーリング', 'チベット'],
+    location: 'チベット僧院',
+    isLiked: true,
+    isSaved: true,
+    source: 'mock' as const
+  },
+  {
     id: 'instagram-test',
     user: {
       id: 'instagram',

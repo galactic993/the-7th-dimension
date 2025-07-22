@@ -3,6 +3,11 @@ import { useUser } from '@clerk/clerk-react';
 import MainApp from './components/MainApp';
 
 function App() {
+  // 一時的に認証をスキップしてテスト用にMainAppを直接表示
+  if (import.meta.env.MODE === 'development') {
+    return <MainApp />;
+  }
+
   const { isLoaded } = useUser();
 
   if (!isLoaded) {

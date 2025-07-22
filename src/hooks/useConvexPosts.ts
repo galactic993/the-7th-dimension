@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Post } from '../types';
+import { mockPosts } from '../data/mockData';
 
 interface UseConvexPostsResult {
   posts: Post[];
@@ -24,12 +25,22 @@ export const useConvexPosts = (): UseConvexPostsResult => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const postsPerPage = 20;
 
-  // Convexからユーザー投稿を取得（Instagram投稿も含む）
-  const userPosts = useQuery(api.posts.getAllPosts);
+  // 常にConvexクエリを呼び出す（フックの順序を保つため）
+  const convexPosts = useQuery(api.posts.getAllPosts);
+  
+  // 開発環境ではモックデータを使用、本番環境ではConvexを使用
+  const userPosts = import.meta.env.MODE === 'development' ? mockPosts : convexPosts;
 
-  const loading = userPosts === undefined;
+  const loading = import.meta.env.MODE === 'development' ? false : convexPosts === undefined;
 
   const posts = useMemo(() => {
+    if (import.meta.env.MODE === 'development') {
+      // モックデータを使用
+      return mockPosts.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    }
+
     if (loading) return [];
 
     // Convexのpostテーブルからすべての投稿を取得（Instagram投稿も含む）

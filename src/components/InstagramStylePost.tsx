@@ -146,7 +146,7 @@ const InstagramStylePost: React.FC<InstagramStylePostProps> = ({
       {post.audioUrl && (
         <div className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
           <ConvexAudio
-            audioUrl={post.audioUrl}
+            storageId={post.audioUrl}
             alt={`${post.user.username}の音声投稿`}
             className="w-full"
             showControls={true}
