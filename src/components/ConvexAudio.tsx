@@ -5,7 +5,8 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 
 interface ConvexAudioProps {
-  storageId: string;
+  storageId?: string;
+  audioUrl?: string;  
   alt?: string;
   className?: string;
   showControls?: boolean;
@@ -14,6 +15,7 @@ interface ConvexAudioProps {
 
 const ConvexAudio: React.FC<ConvexAudioProps> = ({
   storageId,
+  audioUrl,
   alt = "Audio",
   className = "",
   showControls = true,
@@ -28,10 +30,14 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // ConvexからファイルのURLを取得
-  const fileUrl = useQuery(api.posts.getFileUrl, { 
-    storageId: storageId as Id<"_storage"> 
-  });
+  // ConvexからファイルのURLを取得（storageIdが提供された場合のみ）
+  const convexFileUrl = useQuery(
+    api.posts.getFileUrl, 
+    storageId ? { storageId: storageId as Id<"_storage"> } : "skip"
+  );
+  
+  // 最終的なファイルURL決定
+  const fileUrl = audioUrl || convexFileUrl;
 
   useEffect(() => {
     if (!audioRef.current || !fileUrl) return;

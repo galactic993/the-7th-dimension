@@ -98,7 +98,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
             {images.length === 0 && post.audioUrl && (
               <div className="w-full max-w-md p-8">
                 <ConvexAudio
-                  storageId={post.audioUrl}
+                  audioUrl={post.audioUrl}
                   alt={`${post.user.username}の音声投稿`}
                   className="w-full bg-gray-900"
                   showControls={true}
@@ -148,7 +148,7 @@ const PostModal: React.FC<PostModalProps> = ({ post, isOpen, onClose, onLike, on
             {images.length > 0 && post.audioUrl && (
               <div className="p-4 border-b border-gray-200">
                 <ConvexAudio
-                  storageId={post.audioUrl}
+                  audioUrl={post.audioUrl}
                   alt={`${post.user.username}の音声投稿`}
                   className="w-full"
                   showControls={true}
