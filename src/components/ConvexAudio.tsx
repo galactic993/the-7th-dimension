@@ -56,6 +56,7 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
     const audio = audioRef.current;
     
     const handleLoadedMetadata = () => {
+      console.log('Audio loaded successfully');
       setDuration(audio.duration);
       setIsLoading(false);
     };
@@ -69,18 +70,40 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
       setCurrentTime(0);
     };
 
-    const handleError = () => {
+    const handleError = (e: Event) => {
+      console.error('Audio load error:', e);
       setError('音声ファイルの読み込みに失敗しました');
       setIsLoading(false);
     };
 
+    const handleCanPlay = () => {
+      console.log('Audio can play');
+      if (audio.duration) {
+        setDuration(audio.duration);
+      }
+      setIsLoading(false);
+    };
+
+    // タイムアウト設定
+    const loadTimeout = setTimeout(() => {
+      console.warn('Audio load timeout');
+      setError('音声ファイルの読み込みがタイムアウトしました');
+      setIsLoading(false);
+    }, 10000); // 10秒でタイムアウト
+
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
+    // 手動で読み込み開始
+    audio.load();
+
     return () => {
+      clearTimeout(loadTimeout);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
@@ -231,7 +254,7 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
         </button>
       )}
 
-      <style jsx>{`
+      <style>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           width: 16px;
