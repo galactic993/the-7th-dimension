@@ -39,6 +39,16 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
   // 最終的なファイルURL決定
   const fileUrl = audioUrl || convexFileUrl;
 
+  // デバッグログ
+  console.log('ConvexAudio DEBUG:', {
+    storageId,
+    audioUrl,
+    convexFileUrl,
+    fileUrl,
+    isLoading,
+    componentState: 'rendering'
+  });
+
 
   useEffect(() => {
     if (!audioRef.current || !fileUrl) return;
@@ -138,7 +148,9 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
         <div className="animate-pulse">
           <Volume2 className="w-6 h-6 text-gray-400" />
         </div>
-        <div className="text-gray-500 text-sm">音声を読み込み中...</div>
+        <div className="text-gray-500 text-sm">
+          音声を読み込み中... (Debug: storageId={storageId}, convexFileUrl={convexFileUrl ? 'exists' : 'null'})
+        </div>
       </div>
     );
   }
