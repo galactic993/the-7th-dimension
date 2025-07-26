@@ -51,12 +51,20 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
 
 
   useEffect(() => {
-    if (!audioRef.current || !fileUrl) return;
+    console.log('useEffect triggered:', { audioRef: !!audioRef.current, fileUrl });
+    if (!audioRef.current || !fileUrl) {
+      console.log('useEffect early return:', { audioRef: !!audioRef.current, fileUrl });
+      return;
+    }
 
     const audio = audioRef.current;
     
+    // 読み込み状態をリセット
+    setIsLoading(true);
+    setError(null);
+    
     const handleLoadedMetadata = () => {
-      console.log('Audio loaded successfully');
+      console.log('Audio loaded successfully - loadedmetadata');
       setDuration(audio.duration);
       setIsLoading(false);
     };
@@ -71,7 +79,7 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
     };
 
     const handleError = (e: Event) => {
-      console.error('Audio load error:', e);
+      console.error('Audio load error:', e, audio.error);
       setError('音声ファイルの読み込みに失敗しました');
       setIsLoading(false);
     };
@@ -84,24 +92,38 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
       setIsLoading(false);
     };
 
+    const handleLoadStart = () => {
+      console.log('Audio load start');
+    };
+
+    const handleLoadedData = () => {
+      console.log('Audio data loaded');
+      setIsLoading(false);
+    };
+
     // タイムアウト設定
     const loadTimeout = setTimeout(() => {
       console.warn('Audio load timeout');
       setError('音声ファイルの読み込みがタイムアウトしました');
       setIsLoading(false);
-    }, 10000); // 10秒でタイムアウト
+    }, 15000); // 15秒でタイムアウト
 
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('loadeddata', handleLoadedData);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
 
-    // 手動で読み込み開始
+    // srcを設定してから読み込み開始
+    audio.src = fileUrl;
     audio.load();
 
     return () => {
       clearTimeout(loadTimeout);
+      audio.removeEventListener('loadstart', handleLoadStart);
+      audio.removeEventListener('loadeddata', handleLoadedData);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -165,14 +187,14 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
     );
   }
 
-  if (isLoading || !fileUrl) {
+  if (!fileUrl) {
     return (
       <div className={`flex items-center space-x-3 p-4 bg-gray-50 border border-gray-200 rounded-lg ${className}`}>
         <div className="animate-pulse">
           <Volume2 className="w-6 h-6 text-gray-400" />
         </div>
         <div className="text-gray-500 text-sm">
-          音声を読み込み中... (Debug: storageId={storageId}, convexFileUrl={convexFileUrl ? 'exists' : 'null'})
+          音声ファイルURLを取得中... (Debug: storageId={storageId}, convexFileUrl={convexFileUrl ? 'exists' : 'null'})
         </div>
       </div>
     );
@@ -183,17 +205,24 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
       {/* Hidden audio element */}
       <audio 
         ref={audioRef} 
-        src={fileUrl} 
-        preload="metadata"
+        preload="auto"
+        crossOrigin="anonymous"
       />
 
       {/* Play/Pause button */}
       {showControls && (
         <button
           onClick={togglePlay}
-          className="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-colors"
+          disabled={isLoading}
+          className={`flex items-center justify-center w-10 h-10 ${
+            isLoading 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+          } text-white rounded-full transition-colors`}
         >
-          {isPlaying ? (
+          {isLoading ? (
+            <Volume2 className="w-5 h-5 animate-pulse" />
+          ) : isPlaying ? (
             <Pause className="w-5 h-5" />
           ) : (
             <Play className="w-5 h-5 ml-0.5" />
@@ -211,19 +240,24 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
               max="100"
               value={duration > 0 ? (currentTime / duration) * 100 : 0}
               onChange={handleSeek}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              disabled={isLoading}
+              className={`w-full h-2 bg-gray-200 rounded-lg appearance-none ${
+                isLoading ? 'cursor-not-allowed' : 'cursor-pointer'
+              } slider`}
             />
             <div className="flex justify-between text-xs text-gray-500">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
+              <span>{isLoading ? '--:--' : formatTime(currentTime)}</span>
+              <span>{isLoading ? '読み込み中...' : formatTime(duration)}</span>
             </div>
           </>
         )}
         
         {!showControls && (
           <div className="flex items-center space-x-2">
-            <Volume2 className="w-5 h-5 text-gray-500" />
-            <span className="text-sm text-gray-700">{alt}</span>
+            <Volume2 className={`w-5 h-5 text-gray-500 ${isLoading ? 'animate-pulse' : ''}`} />
+            <span className="text-sm text-gray-700">
+              {isLoading ? '音声読み込み中...' : alt}
+            </span>
           </div>
         )}
       </div>
@@ -238,7 +272,10 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
             max="100"
             value={volume * 100}
             onChange={handleVolumeChange}
-            className="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+            disabled={isLoading}
+            className={`w-16 h-2 bg-gray-200 rounded-lg appearance-none ${
+              isLoading ? 'cursor-not-allowed' : 'cursor-pointer'
+            } slider`}
           />
         </div>
       )}
@@ -247,8 +284,13 @@ const ConvexAudio: React.FC<ConvexAudioProps> = ({
       {showDownload && (
         <button
           onClick={handleDownload}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-          title="ダウンロード"
+          disabled={isLoading}
+          className={`p-2 rounded-full transition-colors ${
+            isLoading 
+              ? 'text-gray-400 cursor-not-allowed' 
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          }`}
+          title={isLoading ? '読み込み中...' : 'ダウンロード'}
         >
           <Download className="w-4 h-4" />
         </button>
