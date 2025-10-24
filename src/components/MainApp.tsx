@@ -24,9 +24,7 @@ function MainApp() {
     totalPages,
     totalPosts,
     setCurrentPage,
-    paginatedPosts,
-    setSearchQuery: setConvexSearchQuery,
-    searchQuery: convexSearchQuery
+    paginatedPosts
   } = useConvexPosts();
 
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -122,10 +120,7 @@ function MainApp() {
         <div className="shooting-star"></div>
         <div className="shooting-star"></div>
       </div>
-      <Header 
-        searchQuery={convexSearchQuery}
-        onSearchChange={setConvexSearchQuery}
-      />
+      <Header />
       
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
